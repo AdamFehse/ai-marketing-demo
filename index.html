@@ -22,6 +22,7 @@
   <p class="muted">
     Paste messy marketing notes → get a structured summary, action items, a draft reply, and CRM fields.
   </p>
+  <p class="muted" id="modelInfo">Model: Loading…</p>
 
   <div>
     <label><strong>Marketing Content:</strong></label>
@@ -159,6 +160,24 @@ Client meeting with Acme Corp - Jan 8, 2026. Q1 campaign for new product launch.
       }
     }
 
+    async function loadModelInfo() {
+      const el = document.getElementById("modelInfo");
+      try {
+        const { controller, cleanup } = withTimeout(6000);
+        const res = await fetch(DEFAULT_WORKER, { method: "GET", signal: controller.signal });
+        cleanup();
+        if (!res.ok) throw new Error("Worker not reachable");
+        const data = await res.json().catch(() => ({}));
+        if (data?.model) {
+          el.textContent = `Model: ${data.model}`;
+        } else {
+          el.textContent = "Model: unavailable";
+        }
+      } catch (e) {
+        el.textContent = "Model: unavailable";
+      }
+    }
+
     function formatValue(v) {
       if (v === null || v === undefined) return "null";
       if (Array.isArray(v)) return v.join(", ");
@@ -188,6 +207,7 @@ Client meeting with Acme Corp - Jan 8, 2026. Q1 campaign for new product launch.
         .replaceAll("'", "&#039;");
     }
 
+    loadModelInfo();
   </script>
 </body>
 </html>
