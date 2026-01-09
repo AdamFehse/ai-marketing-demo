@@ -84,9 +84,9 @@ select:focus, textarea:focus, button:focus {
   border-radius: 14px;
 }
 .hidden { display: none; }
-.loading-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-.loading-sub { font-size: 12px; color: var(--slate); margin-top: 8px; }
-.progress-wrap { width: 100%; height: 10px; border-radius: 999px; background: var(--soft-bg); overflow: hidden; box-shadow: inset 0 0 0 1px var(--border); }
+.loading-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.loading-sub { font-size: 11.5px; color: var(--slate); margin-top: 6px; }
+.progress-wrap { width: 100%; height: 8px; border-radius: 999px; background: var(--soft-bg); overflow: hidden; box-shadow: inset 0 0 0 1px var(--border); }
 .progress-bar { height: 100%; width: 0%; background: var(--accent); border-radius: 999px; transition: width 280ms ease; position: relative; }
 .progress-bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, rgba(255,255,255,0.0), rgba(255,255,255,0.35), rgba(255,255,255,0.0)); transform: translateX(-100%); animation: shimmer 1.4s infinite; }
 .muted { color: var(--slate); font-size: 12.5px; line-height: 1.35; max-width: 520px; }
@@ -164,10 +164,10 @@ pre { white-space: pre-wrap; word-break: break-word; }
 .page {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 18px 22px 48px;
+  padding: 16px 20px 46px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .hero {
@@ -180,7 +180,7 @@ pre { white-space: pre-wrap; word-break: break-word; }
 
 .hero h1 {
   margin: 0 0 4px;
-  font-size: 24px;
+  font-size: 36px;
   letter-spacing: -0.3px;
   line-height: 1.2;
 }
@@ -215,7 +215,7 @@ pre { white-space: pre-wrap; word-break: break-word; }
   box-shadow: 0 10px 22px var(--ring);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .input-panel {
@@ -294,7 +294,7 @@ pre { white-space: pre-wrap; word-break: break-word; }
   }
 
   .hero h1 {
-    font-size: 24px;
+    font-size: 28px;
   }
 
   .input-panel {
