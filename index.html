@@ -4,210 +4,178 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Marketing Demo</title>
-  <style>
-    body { font-family: sans-serif; max-width: 1000px; margin: 50px auto; padding: 20px; }
-    textarea, button { width: 100%; padding: 10px; margin: 10px 0; font-size: 14px; box-sizing: border-box; }
-    textarea { height: 200px; }
-    button { background: #0066cc; color: white; border: none; cursor: pointer; }
-    button:disabled { background: #ccc; cursor: not-allowed; }
-    .result { border-left: 3px solid #0066cc; padding: 10px; margin: 20px 0; background: #f5f5f5; }
-    .hidden { display: none; }
-    .muted { color: #666; font-size: 13px; }
-    details { margin-top: 10px; }
-    pre { white-space: pre-wrap; word-break: break-word; }
-  </style>
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <h1>AI Marketing Workflow Automation</h1>
-  <p class="muted">
-    Paste messy marketing notes → get a structured summary, action items, a draft reply, and CRM fields.
-  </p>
-  <p class="muted" id="modelInfo">Model: Loading…</p>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <h1>AI Marketing Workflow Automation</h1>
+        <p class="muted">
+          Paste messy marketing notes → get a structured summary, action items, a draft reply, and CRM fields.
+        </p>
+      </div>
+      <div class="hero-meta">
+        <div class="hero-pill">Intelligence Dashboard</div>
+        <div class="hero-pill">Explainability Layer</div>
+      </div>
+    </header>
 
-  <div>
-    <label><strong>Marketing Content:</strong></label>
-    <textarea id="inputText" placeholder="Paste meeting notes, campaign briefs, or client emails...
+    <main class="layout">
+      <section class="panel input-panel" aria-label="Input panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Input</h2>
+            <p class="panel-sub">Give it notes, emails, or campaign briefs.</p>
+          </div>
+          <div id="modelRow" class="hidden">
+            <label for="modelSelect" class="inline-label">Model</label>
+            <select id="modelSelect" aria-label="Select AI Model"></select>
+          </div>
+        </div>
+
+        <label for="inputText" class="field-label">Marketing Content</label>
+        <textarea 
+          id="inputText" 
+          placeholder="Paste meeting notes, campaign briefs, or client emails...
 
 Example:
-Client meeting with Acme Corp - Jan 8, 2026. Q1 campaign for new product launch. Target millennials on social media. Budget $50k. Need concepts by Jan 20. Contact: Sarah Chen (sarah@acme.com). Focus on Instagram and TikTok. Emphasize sustainability. Need competitor analysis."></textarea>
-    <button id="runBtn" onclick="processContent()">Process with AI</button>
+Client meeting with Acme Corp - Jan 8, 2026. Q1 campaign for new product launch. Target millennials on social media. Budget $50k. Need concepts by Jan 20. Contact: Sarah Chen (sarah@acme.com). Focus on Instagram and TikTok. Emphasize sustainability. Need competitor analysis."
+          aria-label="Enter marketing content to analyze"
+          required
+        ></textarea>
+        <div class="panel-actions">
+          <button 
+            id="runBtn" 
+            onclick="processContent()" 
+            aria-label="Process content with AI"
+          >
+            Process with AI
+          </button>
+        </div>
+
+        <div id="loading" class="hidden" role="alert" aria-live="polite">
+          <div class="loading-title">Processing...</div>
+          <div class="progress-wrap" aria-hidden="true">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <div class="loading-sub" id="loadingSub">Calibrating insight engine</div>
+        </div>
+        
+        <div id="debugSection" class="hidden">
+          <details>
+            <summary aria-label="Toggle debug view">Debug: View Raw JSON Response</summary>
+            <pre id="debugJson" class="debug-panel"></pre>
+          </details>
+        </div>
+      </section>
+
+      <section id="results" class="panel results-panel hidden" aria-label="Results panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Intelligence Dashboard</h2>
+            <p class="panel-sub">Priority signals, urgency, and why each action matters.</p>
+          </div>
+        </div>
+
+        <div class="metrics" id="metrics">
+          <div class="metric-card priority-low" id="priorityCard" role="region" aria-label="Priority metric">
+            <div class="metric-label">Priority</div>
+            <div class="metric-value" id="priorityValue">—</div>
+            <div class="metric-sub" id="prioritySub">Waiting for input</div>
+          </div>
+          <div class="metric-card deadline-card" id="deadlineCard" role="region" aria-label="Deadline metric">
+            <div class="metric-label">Deadline</div>
+            <div class="metric-value" id="deadlineValue">—</div>
+            <div class="metric-sub" id="deadlineSub">No deadline found</div>
+          </div>
+          <div class="metric-card budget-card" id="budgetCard" role="region" aria-label="Budget metric">
+            <div class="metric-label">Budget</div>
+            <div class="metric-value" id="budgetValue">—</div>
+            <div class="metric-sub" id="budgetSub">Not specified</div>
+          </div>
+          <div class="metric-card sentiment-card" id="sentimentCard" role="region" aria-label="Sentiment metric">
+            <div class="metric-label">Sentiment</div>
+            <div class="metric-value" id="sentimentValue">—</div>
+            <div class="metric-sub" id="sentimentSub">Client tone</div>
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title">Action/Impact Matrix</div>
+          <div class="matrix" id="actionMatrix" role="grid">
+            <div class="matrix-cell" id="matrixCritical" role="gridcell" aria-label="High Impact High Urgency items">
+              <div class="matrix-title">High Impact / High Urgency</div>
+            </div>
+            <div class="matrix-cell" id="matrixStrategic" role="gridcell" aria-label="High Impact Low Urgency items">
+              <div class="matrix-title">High Impact / Low Urgency</div>
+            </div>
+            <div class="matrix-cell" id="matrixQuick" role="gridcell" aria-label="Low Impact High Urgency items">
+              <div class="matrix-title">Low Impact / High Urgency</div>
+            </div>
+            <div class="matrix-cell" id="matrixMonitor" role="gridcell" aria-label="Low Impact Low Urgency items">
+              <div class="matrix-title">Low Impact / Low Urgency</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="confidenceBanner" class="confidence-banner hidden" role="alert" aria-live="polite"></div>
+
+        <section id="insights" class="insights hidden" aria-label="Insight Lab">
+          <div class="section-title">Insight Lab</div>
+          <div class="insight-grid">
+            <div class="insight-card" role="region" aria-label="Text stats">
+              <h3>Text Stats</h3>
+              <div id="textStats"></div>
+            </div>
+            <div class="insight-card" role="region" aria-label="Tone and urgency">
+              <h3>Tone & Urgency</h3>
+              <div id="toneStats"></div>
+            </div>
+            <div class="insight-card" role="region" aria-label="Keyword mix">
+              <h3>Keyword Mix</h3>
+              <div id="keywordStats"></div>
+            </div>
+            <div class="insight-card" role="region" aria-label="Markov transitions">
+              <h3>Markov Transitions</h3>
+              <div id="markovStats"></div>
+            </div>
+            <div class="insight-card insight-wide" role="region" aria-label="Evidence map">
+              <h3>Evidence Map</h3>
+              <div id="evidenceStats"></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="section-block">
+          <div class="section-title">Results</div>
+
+          <div class="result" role="region" aria-label="Summary">
+            <h3>Summary</h3>
+            <p id="summary"></p>
+          </div>
+
+          <div class="result" role="region" aria-label="Action Items">
+            <h3>Action Items</h3>
+            <div id="actions"></div>
+          </div>
+
+          <div class="result" role="region" aria-label="Draft Content">
+            <h3>Draft Content</h3>
+            <pre id="draft"></pre>
+          </div>
+
+          <div class="result" role="region" aria-label="CRM Data">
+            <h3>CRM Data</h3>
+            <div id="crm"></div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 
-  <div id="loading" class="hidden">Processing...</div>
+  <div id="toast" class="toast" role="status" aria-live="polite">Task created.</div>
 
-  <div id="results" class="hidden">
-    <h2>Results</h2>
-
-    <div class="result">
-      <h3>Summary</h3>
-      <p id="summary"></p>
-    </div>
-
-    <div class="result">
-      <h3>Action Items</h3>
-      <div id="actions"></div>
-    </div>
-
-    <div class="result">
-      <h3>Draft Content</h3>
-      <pre id="draft"></pre>
-    </div>
-
-    <div class="result">
-      <h3>CRM Data</h3>
-      <div id="crm"></div>
-    </div>
-
-  </div>
-
-  <script>
-    const DEFAULT_WORKER = "https://marketing-worker.adamfehse.workers.dev";
-
-    function withTimeout(ms) {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), ms);
-      return { controller, cleanup: () => clearTimeout(id) };
-    }
-
-    function tryParseJsonLoose(text) {
-      // 1) Strip common fences
-      let t = text.replace(/```json\s*|```/gi, "").trim();
-
-      // 2) If there's extra text, try to extract first {...} block
-      const firstBrace = t.indexOf("{");
-      const lastBrace = t.lastIndexOf("}");
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        t = t.slice(firstBrace, lastBrace + 1);
-      }
-
-      return JSON.parse(t);
-    }
-
-    async function callWorker(workerUrl, prompt) {
-      const { controller, cleanup } = withTimeout(30000);
-
-      const res = await fetch(workerUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: prompt }),
-        signal: controller.signal
-      }).finally(cleanup);
-
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(`Worker request failed (${res.status}). ${body}`);
-      }
-      return res.json();
-    }
-
-    async function processContent() {
-      const inputText = document.getElementById("inputText").value.trim();
-
-      if (!inputText) {
-        alert("Please enter content");
-        return;
-      }
-
-      const runBtn = document.getElementById("runBtn");
-      runBtn.disabled = true;
-
-      document.getElementById("loading").classList.remove("hidden");
-      document.getElementById("results").classList.add("hidden");
-
-      try {
-        // 1st attempt
-        const data1 = await callWorker(DEFAULT_WORKER, inputText);
-        let raw1 = data1?.choices?.[0]?.message?.content || "";
-
-        let result;
-        try {
-          result = tryParseJsonLoose(raw1);
-        } catch (e) {
-          // 2nd attempt: ask model to output ONLY valid JSON again
-          const data2 = await callWorker(DEFAULT_WORKER, inputText);
-          const raw2 = data2?.choices?.[0]?.message?.content || "";
-
-          result = tryParseJsonLoose(raw2);
-        }
-
-        // Render results
-        document.getElementById("summary").textContent = result.summary || "";
-        document.getElementById("actions").innerHTML =
-          normalizeActionItems(result.action_items)
-            .map((a) => {
-              return [
-                "<details>",
-                `<summary>• ${escapeHtml(a.item)}</summary>`,
-                `<p class="muted"><strong>Why:</strong> ${escapeHtml(a.rationale)}</p>`,
-                `<p class="muted"><strong>Evidence:</strong> “${escapeHtml(a.evidence)}”</p>`,
-                "</details>"
-              ].join("");
-            })
-            .join("");
-        document.getElementById("draft").textContent = result.draft_content || "";
-
-        const crm = result.crm_data || {};
-        document.getElementById("crm").innerHTML = Object.entries(crm)
-          .map(([k, v]) => `<p><strong>${escapeHtml(k)}:</strong> ${escapeHtml(formatValue(v))}</p>`)
-          .join("");
-
-        document.getElementById("results").classList.remove("hidden");
-      } catch (error) {
-        alert("Error: " + error.message);
-      } finally {
-        document.getElementById("loading").classList.add("hidden");
-        runBtn.disabled = false;
-      }
-    }
-
-    async function loadModelInfo() {
-      const el = document.getElementById("modelInfo");
-      try {
-        const { controller, cleanup } = withTimeout(6000);
-        const res = await fetch(DEFAULT_WORKER, { method: "GET", signal: controller.signal });
-        cleanup();
-        if (!res.ok) throw new Error("Worker not reachable");
-        const data = await res.json().catch(() => ({}));
-        if (data?.model) {
-          el.textContent = `Model: ${data.model}`;
-        } else {
-          el.textContent = "Model: unavailable";
-        }
-      } catch (e) {
-        el.textContent = "Model: unavailable";
-      }
-    }
-
-    function formatValue(v) {
-      if (v === null || v === undefined) return "null";
-      if (Array.isArray(v)) return v.join(", ");
-      return String(v);
-    }
-
-    function normalizeActionItems(items) {
-      if (!Array.isArray(items)) return [];
-      return items.map((item) => {
-        if (typeof item === "string") {
-          return { item, rationale: "Not provided", evidence: "Not provided" };
-        }
-        return {
-          item: item?.item || "Untitled action",
-          rationale: item?.rationale || "Not provided",
-          evidence: item?.evidence || "Not provided"
-        };
-      });
-    }
-
-    function escapeHtml(s) {
-      return String(s)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    loadModelInfo();
-  </script>
+  <script src="js/app.js"></script>
 </body>
 </html>
