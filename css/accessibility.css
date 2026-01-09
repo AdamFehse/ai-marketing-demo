@@ -85,15 +85,15 @@ h1, h2, h3, h4 {
 /* Ensure sufficient color contrast for backgrounds */
 .priority-high {
   background: var(--card);
-  border-left: 4px solid color-mix(in srgb, CanvasText 60%, Canvas);
+  border-left: 4px solid color-mix(in srgb, var(--ink) 60%, var(--surface));
 }
 .priority-medium {
   background: var(--card);
-  border-left: 4px solid color-mix(in srgb, CanvasText 40%, Canvas);
+  border-left: 4px solid color-mix(in srgb, var(--ink) 40%, var(--surface));
 }
 .priority-low {
   background: var(--card);
-  border-left: 4px solid color-mix(in srgb, CanvasText 25%, Canvas);
+  border-left: 4px solid color-mix(in srgb, var(--ink) 25%, var(--surface));
 }
 
 /* Additional accessibility improvements */

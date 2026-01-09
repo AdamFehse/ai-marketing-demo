@@ -1,4 +1,80 @@
 const DEFAULT_WORKER = "https://marketing-worker.adamfehse.workers.dev";
+const SAMPLE_INPUTS = [
+  {
+    id: "quarterly-check-in",
+    label: "Quarterly check-in (baseline)",
+    value: [
+      "Quarterly check-in with Sarah from Bloom-Tech. Relationship remains stable,",
+      "and she mentioned she is happy with the current results. However, she asked",
+      "for a copy of their current contract just for their internal audit.",
+      "",
+      "She also noted that their parent company is pushing for a 15% reduction in",
+      "vendor spend across the board by the end of Q1 (March 31). They currently pay",
+      "us $8k/month. I suggested we could look at a performance-based model for their",
+      "upcoming Spring Rejuvenation campaign in April.",
+      "",
+      "She said she would be open to a proposal but needs it by Friday because she is",
+      "meeting with her CFO on Monday morning. Also, she mentioned a competitor reached",
+      "out to their VP of Marketing last week."
+    ].join("\n")
+  },
+  {
+    id: "aggrieved-stakeholder",
+    label: "Aggrieved stakeholder (conflict/sentiment test)",
+    value: [
+      "Look, I am extremely disappointed. We spent $20k on the Winter Blast campaign",
+      "and the tracking links were broken for the first 48 hours. I have to explain",
+      "this to the board on Wednesday morning. I need a full post-mortem report and a",
+      "credit for the management fees by tomorrow end of day. If we cannot get this",
+      "right, we are going to have to pause all Q2 spending while we evaluate other",
+      "agency partners. Contact me on my cell, do not email Jim."
+    ].join("\n")
+  },
+  {
+    id: "technical-upsell",
+    label: "Technical upsell (opportunity detection)",
+    value: [
+      "The landing pages look great, but our sales team is complaining that they have",
+      "to manually export leads into Salesforce every morning. It is a mess. If you",
+      "guys can automate that sync, we can move the extra $3,500 we had earmarked for",
+      "the print ads over to your retainer instead. We are hoping to have the new",
+      "system live before the trade show on March 15th. Let us talk about the API",
+      "requirements on our regular Friday call."
+    ].join("\n")
+  },
+  {
+    id: "ma-high-stakes",
+    label: "M&A / high stakes strategy (complex context)",
+    value: [
+      "Confidential: Bloom-Tech is actually in the middle of being acquired by a",
+      "larger holding company. Because of this, we need to standardize all our",
+      "marketing reporting by Feb 1st to match their format. Our current monthly",
+      "spend is $12k, but the new owners might want to consolidate vendors. We need",
+      "to look indispensable right now. I need a summary of our total ROI for the",
+      "last 12 months for a meeting on Monday."
+    ].join("\n")
+  },
+  {
+    id: "micro-influencer",
+    label: "Micro-influencer expansion (creative/briefing)",
+    value: [
+      "We want to pilot a TikTok influencer program. We have a small test budget of",
+      "$5k to start. I want to see a list of 10 potential creators by end of week.",
+      "If the pilot hits a 3x ROAS, we can scale this to $50k in the summer. No hard",
+      "deadlines yet, just exploring for now. Make sure the draft reply sounds really",
+      "casual - Sarah likes to keep things low-key."
+    ].join("\n")
+  },
+  {
+    id: "short-vague",
+    label: "Short & vague (inference test)",
+    value: [
+      "Hey, did we ever decide on the renewal? My boss is asking. I think we",
+      "discussed $10k but I cannot find the email. Send over the DocuSign again when",
+      "you can. We need to sign by EOM or the project pauses."
+    ].join("\n")
+  }
+];
 
 function withTimeout(ms) {
   const controller = new AbortController();
@@ -154,6 +230,34 @@ async function processContent() {
     loadingElement.classList.add("hidden");
     runBtn.disabled = false;
   }
+}
+
+function setInputText(value, toastMessage) {
+  const inputTextElement = document.getElementById("inputText");
+  if (!inputTextElement) return;
+  inputTextElement.value = value;
+  inputTextElement.focus();
+  if (toastMessage) showToast(toastMessage);
+}
+
+function insertSampleInput() {
+  const sampleSelect = document.getElementById("sampleSelect");
+  const selectedId = sampleSelect?.value || "";
+  const selected = SAMPLE_INPUTS.find((sample) => sample.id === selectedId);
+  if (!selected) {
+    showToast("Choose a sample first.");
+    return;
+  }
+  setInputText(selected.value, "Sample loaded.");
+}
+
+function populateSampleSelect() {
+  const sampleSelect = document.getElementById("sampleSelect");
+  if (!sampleSelect) return;
+  const options = SAMPLE_INPUTS.map((sample) => (
+    `<option value="${escapeHtml(sample.id)}">${escapeHtml(sample.label)}</option>`
+  )).join("");
+  sampleSelect.insertAdjacentHTML("beforeend", options);
 }
 
 async function loadModelInfo() {
@@ -677,4 +781,5 @@ function escapeHtml(s) {
 // Initialize the app when the DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
   loadModelInfo();
+  populateSampleSelect();
 });

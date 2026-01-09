@@ -12,7 +12,7 @@
       <div>
         <h1>AI Marketing Workflow Automation</h1>
         <p class="muted">
-          Paste messy marketing notes → get a structured summary, action items, a draft reply, and CRM fields.
+          Paste marketing notes → get a structured summary, action items, a draft reply, and CRM fields.
         </p>
       </div>
       <div class="hero-meta">
@@ -45,12 +45,25 @@ Client meeting with Acme Corp - Jan 8, 2026. Q1 campaign for new product launch.
           required
         ></textarea>
         <div class="panel-actions">
-          <button 
+          <button
             id="runBtn" 
             onclick="processContent()" 
             aria-label="Process content with AI"
           >
             Process with AI
+          </button>
+        </div>
+        <div class="panel-actions panel-actions-stack">
+          <label for="sampleSelect" class="field-label">Load a sample prompt</label>
+          <select id="sampleSelect" aria-label="Select a sample input">
+            <option value="">Choose a scenario...</option>
+          </select>
+          <button
+            type="button"
+            onclick="insertSampleInput()"
+            aria-label="Insert selected sample"
+          >
+            Insert sample prompt
           </button>
         </div>
 
