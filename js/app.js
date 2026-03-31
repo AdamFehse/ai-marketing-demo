@@ -1,4 +1,4 @@
-const DEFAULT_WORKER = "https://marketing-worker.adamfehse.workers.dev";
+const DEFAULT_WORKER = "https://ancient-bonus-67c5.adamfehse.workers.dev";
 const SAMPLE_INPUTS = [
   {
     id: "quarterly-check-in",
