@@ -1,194 +1,216 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Marketing Demo</title>
-  <link rel="stylesheet" href="css/styles.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI 3PL Workflow Console</title>
+<link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div class="page">
-    <header class="hero">
-      <div>
-        <h1>AI Marketing Workflow Automation</h1>
-        <p class="muted">
-          Paste marketing notes → get a structured summary, action items, a draft reply, and CRM fields.
-        </p>
-      </div>
-      <div class="hero-meta">
-        <div class="hero-pill">Intelligence Dashboard</div>
-        <div class="hero-pill">Explainability Layer</div>
-      </div>
-    </header>
+<a class="skip-link" href="#inputText">Skip to input</a>
 
-    <main class="layout">
-      <section class="panel input-panel" aria-label="Input panel">
-        <div class="panel-header">
-          <div>
-            <h2 class="panel-title">Input</h2>
-            <p class="panel-sub">Give it notes, emails, or campaign briefs.</p>
-          </div>
-          <div id="modelRow" class="hidden">
-            <label for="modelSelect" class="inline-label">Model</label>
-            <select id="modelSelect" aria-label="Select AI Model"></select>
-          </div>
-        </div>
+<div class="page">
+<header class="console-header">
+<div>
+<h1>AI 3PL Workflow Console</h1>
+<p class="muted">
+Paste logistics emails, quote requests, or ops notes → get structured data, validation, actions, and API payloads.
+</p>
+</div>
+<div class="header-meta">
+<div class="header-pill">Operations</div>
+<div class="header-pill">Validation Layer</div>
+</div>
+</header>
 
-        <label for="inputText" class="field-label">Marketing Content</label>
-        <textarea 
-          id="inputText" 
-          placeholder="Paste meeting notes, campaign briefs, or client emails...
+<main class="layout">
+<section class="panel input-panel" aria-label="Input panel">
+<div class="panel-header">
+<div>
+<h2 class="panel-title">Input</h2>
+<p class="panel-sub">Paste emails, quote requests, receiving notes, or escalations.</p>
+</div>
+<div id="modelRow" class="hidden">
+<label for="modelSelect" class="inline-label">Model</label>
+<select id="modelSelect" aria-label="Select AI Model"></select>
+</div>
+</div>
+
+<label for="inputText" class="field-label">Logistics Content</label>
+<textarea
+id="inputText"
+placeholder="Paste a quote request, order email, tracking inquiry, receiving exception, or ops escalation...
 
 Example:
-Client meeting with Acme Corp - Jan 8, 2026. Q1 campaign for new product launch. Target millennials on social media. Budget $50k. Need concepts by Jan 20. Contact: Sarah Chen (sarah@acme.com). Focus on Instagram and TikTok. Emphasize sustainability. Need competitor analysis."
-          aria-label="Enter marketing content to analyze"
-          required
-        ></textarea>
-        <div class="panel-actions">
-          <button
-            id="runBtn" 
-            onclick="processContent()" 
-            aria-label="Process content with AI"
-          >
-            Process with AI
-          </button>
-        </div>
-        <div class="panel-actions panel-actions-stack">
-          <label for="sampleSelect" class="field-label">Load a sample prompt</label>
-          <select id="sampleSelect" aria-label="Select a sample input">
-            <option value="">Choose a scenario...</option>
-          </select>
-          <button
-            type="button"
-            onclick="insertSampleInput()"
-            aria-label="Insert selected sample"
-          >
-            Insert sample prompt
-          </button>
-        </div>
+Need quote to move 4 pallets from Miami to Chicago, 4,500 lbs, liftgate delivery, pickup Friday. Customer is Acme Corp, contact Sarah at sarah@acme.com. Need rate by Thursday."
+aria-label="Enter logistics content to analyze"
+required
+></textarea>
+<div class="panel-actions">
+<button
+id="runBtn"
+aria-label="Process content with AI"
+>
+Process Workflow
+</button>
+</div>
+<div class="panel-actions panel-actions-stack">
+<label for="sampleSelect" class="field-label">Load a sample scenario</label>
+<select id="sampleSelect" aria-label="Select a sample input">
+<option value="">Choose a scenario...</option>
+</select>
+<button
+type="button"
+id="insertSampleBtn"
+aria-label="Insert selected sample"
+>
+Insert sample prompt
+</button>
+</div>
 
-        <div id="loading" class="hidden" role="alert" aria-live="polite">
-          <div class="loading-title">Processing...</div>
-          <div class="progress-wrap" aria-hidden="true">
-            <div class="progress-bar" id="progressBar"></div>
-          </div>
-          <div class="loading-sub" id="loadingSub">Calibrating insight engine</div>
-        </div>
-        
-        <div id="debugSection" class="hidden">
-          <details>
-            <summary aria-label="Toggle debug view">Debug: View Raw JSON Response</summary>
-            <pre id="debugJson" class="debug-panel"></pre>
-          </details>
-        </div>
-      </section>
+<div id="loading" class="hidden" role="alert" aria-live="polite">
+<div class="loading-title">Processing...</div>
+<div class="progress-wrap" aria-hidden="true">
+<div class="progress-bar" id="progressBar"></div>
+</div>
+<div class="loading-sub" id="loadingSub">Extracting workflow data</div>
+</div>
 
-      <section id="results" class="panel results-panel hidden" aria-label="Results panel">
-        <div class="panel-header">
-          <div>
-            <h2 class="panel-title">Intelligence Dashboard</h2>
-            <p class="panel-sub">Priority signals, urgency, and why each action matters.</p>
-          </div>
-        </div>
+<div id="debugSection" class="hidden">
+<details>
+<summary aria-label="Toggle debug view">Debug: View Raw JSON Response</summary>
+<pre id="debugJson" class="debug-panel"></pre>
+</details>
+</div>
+</section>
 
-        <div class="metrics" id="metrics">
-          <div class="metric-card priority-low" id="priorityCard" role="region" aria-label="Priority metric">
-            <div class="metric-label">Priority</div>
-            <div class="metric-value" id="priorityValue">—</div>
-            <div class="metric-sub" id="prioritySub">Waiting for input</div>
-          </div>
-          <div class="metric-card deadline-card" id="deadlineCard" role="region" aria-label="Deadline metric">
-            <div class="metric-label">Deadline</div>
-            <div class="metric-value" id="deadlineValue">—</div>
-            <div class="metric-sub" id="deadlineSub">No deadline found</div>
-          </div>
-          <div class="metric-card budget-card" id="budgetCard" role="region" aria-label="Budget metric">
-            <div class="metric-label">Budget</div>
-            <div class="metric-value" id="budgetValue">—</div>
-            <div class="metric-sub" id="budgetSub">Not specified</div>
-          </div>
-          <div class="metric-card sentiment-card" id="sentimentCard" role="region" aria-label="Sentiment metric">
-            <div class="metric-label">Sentiment</div>
-            <div class="metric-value" id="sentimentValue">—</div>
-            <div class="metric-sub" id="sentimentSub">Client tone</div>
-          </div>
-        </div>
+<section id="results" class="panel results-panel hidden" aria-label="Results panel">
+<div class="panel-header">
+<div>
+<h2 class="panel-title">Workflow Dashboard</h2>
+<p class="panel-sub">Extracted data, validation, actions, and API payloads.</p>
+</div>
+</div>
 
-        <div class="section-block">
-          <div class="section-title">Action/Impact Matrix</div>
-          <div class="matrix" id="actionMatrix" role="grid">
-            <div class="matrix-cell" id="matrixCritical" role="gridcell" aria-label="High Impact High Urgency items">
-              <div class="matrix-title">High Impact / High Urgency</div>
-            </div>
-            <div class="matrix-cell" id="matrixStrategic" role="gridcell" aria-label="High Impact Low Urgency items">
-              <div class="matrix-title">High Impact / Low Urgency</div>
-            </div>
-            <div class="matrix-cell" id="matrixQuick" role="gridcell" aria-label="Low Impact High Urgency items">
-              <div class="matrix-title">Low Impact / High Urgency</div>
-            </div>
-            <div class="matrix-cell" id="matrixMonitor" role="gridcell" aria-label="Low Impact Low Urgency items">
-              <div class="matrix-title">Low Impact / Low Urgency</div>
-            </div>
-          </div>
-        </div>
+<div class="metrics" id="metrics">
+<div class="metric-card priority-low" id="priorityCard" role="region" aria-label="Priority metric">
+<div class="metric-label">Priority</div>
+<div class="metric-value" id="priorityValue">—</div>
+<div class="metric-sub" id="prioritySub">Waiting for input</div>
+</div>
+<div class="metric-card workflow-card" id="workflowCard" role="region" aria-label="Workflow type metric">
+<div class="metric-label">Workflow</div>
+<div class="metric-value" id="workflowValue">—</div>
+<div class="metric-sub" id="workflowSub">Not classified</div>
+</div>
+<div class="metric-card completeness-card" id="completenessCard" role="region" aria-label="Completeness metric">
+<div class="metric-label">Completeness</div>
+<div class="metric-value" id="completenessValue">—</div>
+<div class="metric-sub" id="completenessSub">No data</div>
+</div>
+<div class="metric-card exception-card" id="exceptionCard" role="region" aria-label="Exception risk metric">
+<div class="metric-label">Exception Risk</div>
+<div class="metric-value" id="exceptionValue">—</div>
+<div class="metric-sub" id="exceptionSub">Not assessed</div>
+</div>
+</div>
 
-        <div id="confidenceBanner" class="confidence-banner hidden" role="alert" aria-live="polite"></div>
+<div class="section-block">
+<div class="section-title">Operations Summary</div>
+<div class="result" role="region" aria-label="Operations Summary">
+<p id="summary"></p>
+</div>
+</div>
 
-        <section id="insights" class="insights hidden" aria-label="Insight Lab">
-          <div class="section-title">Insight Lab</div>
-          <div class="insight-grid">
-            <div class="insight-card" role="region" aria-label="Text stats">
-              <h3>Text Stats</h3>
-              <div id="textStats"></div>
-            </div>
-            <div class="insight-card" role="region" aria-label="Tone and urgency">
-              <h3>Tone & Urgency</h3>
-              <div id="toneStats"></div>
-            </div>
-            <div class="insight-card" role="region" aria-label="Keyword mix">
-              <h3>Keyword Mix</h3>
-              <div id="keywordStats"></div>
-            </div>
-            <div class="insight-card" role="region" aria-label="Markov transitions">
-              <h3>Markov Transitions</h3>
-              <div id="markovStats"></div>
-            </div>
-            <div class="insight-card insight-wide" role="region" aria-label="Evidence map">
-              <h3>Evidence Map</h3>
-              <div id="evidenceStats"></div>
-            </div>
-          </div>
-        </section>
+<div class="section-block">
+<div class="section-title">Structured Data</div>
+<div class="result" role="region" aria-label="Structured Shipment/Order Data">
+<h3>Shipment / Order Data</h3>
+<div id="structuredData"></div>
+</div>
+</div>
 
-        <div class="section-block">
-          <div class="section-title">Results</div>
+<div class="section-block">
+<div class="section-title">Missing Fields & Validation</div>
+<div id="missingFields" class="result" role="region" aria-label="Missing Fields and Validation">
+<h3>Missing Fields</h3>
+<div id="missingFieldsList"></div>
+<h3>Validation Warnings</h3>
+<div id="validationWarnings"></div>
+</div>
+</div>
 
-          <div class="result" role="region" aria-label="Summary">
-            <h3>Summary</h3>
-            <p id="summary"></p>
-          </div>
+<div class="section-block">
+<div class="section-title">Recommended Operator Actions</div>
+<div class="result" role="region" aria-label="Recommended Operator Actions">
+<div id="actions"></div>
+</div>
+</div>
 
-          <div class="result" role="region" aria-label="Action Items">
-            <h3>Action Items</h3>
-            <div id="actions"></div>
-          </div>
+<div class="section-block">
+<div class="section-title">Suggested Customer Reply</div>
+<div class="result" role="region" aria-label="Suggested Customer Reply">
+<pre id="draftReply"></pre>
+</div>
+</div>
 
-          <div class="result" role="region" aria-label="Draft Content">
-            <h3>Draft Content</h3>
-            <pre id="draft"></pre>
-          </div>
+<div class="section-block">
+<div class="section-title">API Payload</div>
+<div class="result" role="region" aria-label="API Payload">
+<div class="payload-tabs">
+<button type="button" class="payload-tab active" data-tab="order" aria-label="Order payload tab">Order</button>
+<button type="button" class="payload-tab" data-tab="quote" aria-label="Quote payload tab">Quote</button>
+<button type="button" class="payload-tab" data-tab="tracking" aria-label="Tracking payload tab">Tracking</button>
+</div>
+<pre id="apiPayload" class="payload-view"></pre>
+<button type="button" id="copyPayloadBtn" class="copy-btn" aria-label="Copy API payload to clipboard">Copy Payload</button>
+</div>
+</div>
 
-          <div class="result" role="region" aria-label="CRM Data">
-            <h3>CRM Data</h3>
-            <div id="crm"></div>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
+<div class="section-block">
+<div class="section-title">Production Workflow</div>
+<div class="result" role="region" aria-label="Production Workflow Diagram">
+<div class="workflow-diagram">
+<div class="wf-step">
+<div class="wf-icon">📧</div>
+<div class="wf-label">Webhook / Gmail</div>
+</div>
+<div class="wf-arrow">→</div>
+<div class="wf-step">
+<div class="wf-icon">🤖</div>
+<div class="wf-label">AI Extraction</div>
+</div>
+<div class="wf-arrow">→</div>
+<div class="wf-step">
+<div class="wf-icon">✅</div>
+<div class="wf-label">Validation</div>
+</div>
+<div class="wf-arrow">→</div>
+<div class="wf-step">
+<div class="wf-icon">🔀</div>
+<div class="wf-label">n8n Routing</div>
+</div>
+<div class="wf-arrow">→</div>
+<div class="wf-step">
+<div class="wf-icon">📦</div>
+<div class="wf-label">WMS / TMS / CRM</div>
+</div>
+<div class="wf-arrow">→</div>
+<div class="wf-step">
+<div class="wf-icon">🖥️</div>
+<div class="wf-label">Operator Dashboard</div>
+</div>
+</div>
+</div>
+</div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite">Task created.</div>
+<div id="confidenceBanner" class="confidence-banner hidden" role="alert" aria-live="polite"></div>
+</section>
+</main>
+</div>
 
-  <script src="js/app.js"></script>
+<div id="toast" class="toast" role="status" aria-live="polite">Action created.</div>
+
+<script src="js/app.js"></script>
 </body>
 </html>

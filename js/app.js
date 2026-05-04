@@ -1,80 +1,86 @@
+// ============================================================
+// AI 3PL Workflow Console — Client Logic
+// ============================================================
+
 const DEFAULT_WORKER = "https://ancient-bonus-67c5.adamfehse.workers.dev";
+
+// ============================================================
+// SAMPLE INPUTS — Logistics / 3PL Scenarios
+// ============================================================
 const SAMPLE_INPUTS = [
   {
-    id: "quarterly-check-in",
-    label: "Quarterly check-in (baseline)",
+    id: "quote-intake",
+    label: "Quote Intake (messy request)",
     value: [
-      "Quarterly check-in with Sarah from Bloom-Tech. Relationship remains stable,",
-      "and she mentioned she is happy with the current results. However, she asked",
-      "for a copy of their current contract just for their internal audit.",
-      "",
-      "She also noted that their parent company is pushing for a 15% reduction in",
-      "vendor spend across the board by the end of Q1 (March 31). They currently pay",
-      "us $8k/month. I suggested we could look at a performance-based model for their",
-      "upcoming Spring Rejuvenation campaign in April.",
-      "",
-      "She said she would be open to a proposal but needs it by Friday because she is",
-      "meeting with her CFO on Monday morning. Also, she mentioned a competitor reached",
-      "out to their VP of Marketing last week."
+      "Need quote to move 4 pallets from Miami to Chicago, 4,500 lbs, liftgate delivery,",
+      "pickup Friday. Customer is Acme Corp, contact Sarah at sarah@acme.com.",
+      "Need rate by Thursday. They said the product is fragile so maybe extra padding.",
+      "Delivery to a residential area, might need appointment."
     ].join("\n")
   },
   {
-    id: "aggrieved-stakeholder",
-    label: "Aggrieved stakeholder (conflict/sentiment test)",
+    id: "order-creation",
+    label: "Order Creation (customer email)",
     value: [
-      "Look, I am extremely disappointed. We spent $20k on the Winter Blast campaign",
-      "and the tracking links were broken for the first 48 hours. I have to explain",
-      "this to the board on Wednesday morning. I need a full post-mortem report and a",
-      "credit for the management fees by tomorrow end of day. If we cannot get this",
-      "right, we are going to have to pause all Q2 spending while we evaluate other",
-      "agency partners. Contact me on my cell, do not email Jim."
+      "Hi, please ship the following to our new warehouse:",
+      "SKU: WH-200-BLK x 50 units",
+      "SKU: WH-200-WHT x 30 units",
+      "Ship to: 4500 Industrial Blvd, Suite 12, Dallas, TX 75247",
+      "Attn: Mike Rodriguez, mike@bluewhale.co",
+      "Ground shipping is fine. Need it by end of month.",
+      "Our order number is BW-2026-0482."
     ].join("\n")
   },
   {
-    id: "technical-upsell",
-    label: "Technical upsell (opportunity detection)",
+    id: "receiving-exception",
+    label: "Receiving Exception (mismatch)",
     value: [
-      "The landing pages look great, but our sales team is complaining that they have",
-      "to manually export leads into Salesforce every morning. It is a mess. If you",
-      "guys can automate that sync, we can move the extra $3,500 we had earmarked for",
-      "the print ads over to your retainer instead. We are hoping to have the new",
-      "system live before the trade show on March 15th. Let us talk about the API",
-      "requirements on our regular Friday call."
+      "Receiving report for PO-9912 at Warehouse 3:",
+      "Expected: SKU WH-200-BLK x 100, SKU WH-300-GRY x 50",
+      "Received: SKU WH-200-BLK x 87 (13 short), SKU WH-300-GRY x 50",
+      "2 cartons of WH-200-BLK had water damage on outer packaging.",
+      "Contents seem okay but customer will need to be notified.",
+      "Dock supervisor: Carlos M. — signed off at 2:15 PM."
     ].join("\n")
   },
   {
-    id: "ma-high-stakes",
-    label: "M&A / high stakes strategy (complex context)",
+    id: "shipment-tracking",
+    label: "Shipment Tracking (customer inquiry)",
     value: [
-      "Confidential: Bloom-Tech is actually in the middle of being acquired by a",
-      "larger holding company. Because of this, we need to standardize all our",
-      "marketing reporting by Feb 1st to match their format. Our current monthly",
-      "spend is $12k, but the new owners might want to consolidate vendors. We need",
-      "to look indispensable right now. I need a summary of our total ROI for the",
-      "last 12 months for a meeting on Monday."
+      "Customer GreenLeaf Inc is asking about their shipment.",
+      "Tracking number: 1Z999AA10123456784",
+      "Order number: GL-2026-0337",
+      "They say it was supposed to arrive last Friday and they",
+      "haven't received any updates. Their warehouse manager",
+      "is asking for an ETA so they can plan staffing.",
+      "Contact: jenny@greenleaf.com"
     ].join("\n")
   },
   {
-    id: "micro-influencer",
-    label: "Micro-influencer expansion (creative/briefing)",
+    id: "vague-escalation",
+    label: "Vague Escalation (angry customer)",
     value: [
-      "We want to pilot a TikTok influencer program. We have a small test budget of",
-      "$5k to start. I want to see a list of 10 potential creators by end of week.",
-      "If the pilot hits a 3x ROAS, we can scale this to $50k in the summer. No hard",
-      "deadlines yet, just exploring for now. Make sure the draft reply sounds really",
-      "casual - Sarah likes to keep things low-key."
+      "This is the third time our shipment has been delayed. We have",
+      "customers waiting and we're losing money every day this sits in",
+      "your warehouse. I need someone to look into this immediately.",
+      "Order #LF-8821. If I don't hear back by end of day I'm",
+      "escalating to our VP to find a new 3PL partner.",
+      "— Tom B., Operations Director, LeafLine Foods"
     ].join("\n")
   },
   {
     id: "short-vague",
     label: "Short & vague (inference test)",
     value: [
-      "Hey, did we ever decide on the renewal? My boss is asking. I think we",
-      "discussed $10k but I cannot find the email. Send over the DocuSign again when",
-      "you can. We need to sign by EOM or the project pauses."
+      "Hey, can we get a quote? 2 pallets, about 2000 lbs,",
+      "going to New York. Need it soon. Thanks."
     ].join("\n")
   }
 ];
+
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
 
 function withTimeout(ms) {
   const controller = new AbortController();
@@ -83,26 +89,68 @@ function withTimeout(ms) {
 }
 
 function tryParseJsonLoose(text) {
-  // 1) Strip common fences
-  let t = text.replace(/```json\s*|```/gi, "").trim();
-
-  // 2) If there's extra text, try to extract first {...} block
+  let t = String(text || "")
+    .replace(/```json\s*|```/gi, "")
+    .trim();
   const firstBrace = t.indexOf("{");
   const lastBrace = t.lastIndexOf("}");
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
     t = t.slice(firstBrace, lastBrace + 1);
   }
-
-  return JSON.parse(t);
+  try {
+    return JSON.parse(t);
+  } catch (err) {
+    if (!(err instanceof SyntaxError)) throw err;
+    return JSON.parse(escapeControlCharsInJsonStrings(t));
+  }
 }
+
+function escapeControlCharsInJsonStrings(jsonText) {
+  let result = "";
+  let inString = false;
+  let escaping = false;
+  for (let i = 0; i < jsonText.length; i += 1) {
+    const char = jsonText[i];
+    if (escaping) { result += char; escaping = false; continue; }
+    if (char === "\\") { result += char; escaping = true; continue; }
+    if (char === '"') { result += char; inString = !inString; continue; }
+    if (!inString) { result += char; continue; }
+    if (char === "\n") { result += "\\n"; continue; }
+    if (char === "\r") { result += "\\r"; continue; }
+    if (char === "\t") { result += "\\t"; continue; }
+    const code = char.charCodeAt(0);
+    if (code >= 0 && code <= 0x1f) { result += `\\u${code.toString(16).padStart(4, "0")}`; continue; }
+    result += char;
+  }
+  return result;
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, String.fromCharCode(38) + "amp;")
+    .replace(/</g, String.fromCharCode(38) + "lt;")
+    .replace(/>/g, String.fromCharCode(38) + "gt;")
+    .replace(/"/g, String.fromCharCode(38) + "quot;")
+    .replace(/'/g, String.fromCharCode(38) + "#039;");
+}
+
+function formatValue(v) {
+  if (v === null || v === undefined) return "—";
+  if (Array.isArray(v)) return v.join(", ");
+  return String(v);
+}
+
+// ============================================================
+// LOADING METER
+// ============================================================
 
 let loadingInterval = null;
 let loadingValue = 0;
 const loadingMessages = [
-  "Calibrating insight engine",
-  "Parsing intent signals",
-  "Mapping urgency and impact",
-  "Synthesizing evidence trails",
+  "Extracting workflow data",
+  "Classifying workflow type",
+  "Validating fields",
+  "Building API payload",
   "Finalizing dashboard"
 ];
 
@@ -141,9 +189,12 @@ function finishLoadingMeter() {
   }, 350);
 }
 
+// ============================================================
+// WORKER COMMUNICATION
+// ============================================================
+
 async function callWorker(workerUrl, prompt, model) {
   const { controller, cleanup } = withTimeout(30000);
-
   const res = await fetch(workerUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -158,78 +209,780 @@ async function callWorker(workerUrl, prompt, model) {
   return res.json();
 }
 
+// ============================================================
+// FALLBACK PARSER — Deterministic browser-side extraction
+// ============================================================
+
+const WORKFLOW_TYPES = ["quote_intake", "order_creation", "shipment_tracking", "receiving_exception", "general_ops_triage"];
+
+const WORKFLOW_LABELS = {
+  quote_intake: "Quote Intake",
+  order_creation: "Order Creation",
+  shipment_tracking: "Shipment Tracking",
+  receiving_exception: "Receiving Exception",
+  general_ops_triage: "General Ops Triage"
+};
+
+function classifyWorkflow(text) {
+  const lower = text.toLowerCase();
+  if (/\b(quote|rate|pricing|cost to|move|ship.*from|freight|pallet|liftgate)\b/.test(lower) && !/\b(order|sku|tracking)\b/.test(lower)) return "quote_intake";
+  if (/\b(sku|order|ship to|shipping address|quantity|units|warehouse)\b/.test(lower) && !/\b(tracking|track|1z|exception|damag|short)\b/.test(lower)) return "order_creation";
+  if (/\b(tracking|track number|1z|eta|where.*shipment|status.*order)\b/.test(lower)) return "shipment_tracking";
+  if (/\b(receiv|expected.*received|short|damag|carton|mismatch|receiving report|dock)\b/.test(lower)) return "receiving_exception";
+  return "general_ops_triage";
+}
+
+function extractOrigin(text) {
+  const lower = text.toLowerCase();
+  const patterns = [
+    /(?:from|origin|pickup(?:\s+(?:city|location))?)[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    /from\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+to\b/i
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+
+function extractDestination(text) {
+  const patterns = [
+    /(?:to|destination|deliver(?:y)?(?:\s+(?:city|location))?)[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    /to\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*[,.\n]/i
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+
+function extractPalletCount(text) {
+  const m = text.match(/(\d+)\s*pallet/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function extractWeight(text) {
+  const m = text.match(/([\d,]+(?:\.\d+)?)\s*(?:lbs?|pounds?)/i);
+  if (!m) return null;
+  return parseFloat(m[1].replace(/,/g, ""));
+}
+
+function extractSpecialRequirements(text) {
+  const lower = text.toLowerCase();
+  const reqs = [];
+  if (/\bliftgate\b/i.test(text)) reqs.push("liftgate");
+  if (/\bresidential\b/i.test(text)) reqs.push("residential delivery");
+  if (/\bappointment\b/i.test(text)) reqs.push("appointment required");
+  if (/\bfragile\b/i.test(text)) reqs.push("fragile");
+  if (/\b(extra|additional)\s+padding\b/i.test(text)) reqs.push("extra padding");
+  if (/\binside\s+delivery\b/i.test(text)) reqs.push("inside delivery");
+  if (/\bwhite\s+glove\b/i.test(text)) reqs.push("white glove");
+  return reqs;
+}
+
+function extractPickupWindow(text) {
+  const m = text.match(/pickup\s+(?:on\s+)?(?:this\s+)?(\w+)/i);
+  if (m) return m[1].trim();
+  const m2 = text.match(/pickup[:\s]+([^\n,.;]+)/i);
+  if (m2) return m2[1].trim();
+  return null;
+}
+
+function extractDeliveryWindow(text) {
+  const m = text.match(/deliver(?:y)?\s+(?:by|before|on|no\s+later\s+than)\s+([^\n,.;]+)/i);
+  if (m) return m[1].trim();
+  const m2 = text.match(/need\s+(?:it\s+)?by\s+([^\n,.;]+)/i);
+  if (m2) return m2[1].trim();
+  return null;
+}
+
+function extractTrackingNumber(text) {
+  const m = text.match(/\b(1Z[A-Z0-9]{6,})\b/i);
+  if (m) return m[0];
+  const m2 = text.match(/tracking(?:\s*(?:number|#|no))?[:\s]+([A-Z0-9\-]{6,})/i);
+  if (m2) return m2[1].trim();
+  return null;
+}
+
+function extractOrderNumber(text) {
+  const m = text.match(/(?:order|PO|purchase)\s*(?:number|#|no)?[:\s]*([A-Z0-9\-]{4,})/i);
+  if (m) return m[1].trim();
+  return null;
+}
+
+function extractSKUs(text) {
+  const items = [];
+  const skuPattern = /SKU[:\s]*([A-Z0-9\-]+)[\s,]+x\s*(\d+)/gi;
+  let match;
+  while ((match = skuPattern.exec(text)) !== null) {
+    items.push({ sku: match[1], quantity: parseInt(match[2], 10) });
+  }
+  return items;
+}
+
+function extractShippingAddress(text) {
+  const addr = {};
+  const streetM = text.match(/(\d+\s+[\w\s]+(?:Blvd|St|Ave|Dr|Ln|Way|Ct|Pkwy|Road|Suite|Unit)[^\n,]*)/i);
+  if (streetM) addr.street1 = streetM[1].trim();
+
+  const cityStateZip = text.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?),\s*([A-Z]{2})\s+(\d{5})/);
+  if (cityStateZip) {
+    addr.city = cityStateZip[1].trim();
+    addr.state = cityStateZip[2];
+    addr.postal_code = cityStateZip[3];
+  }
+
+  addr.country_code = "US";
+  return addr;
+}
+
+function extractContactName(text) {
+  const m = text.match(/(?:contact|attn)[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
+  if (m) return m[1].trim();
+  const m2 = text.match(/([A-Z][a-z]+\s+[A-Z]\.?,?\s+(?:Operations|Director|Manager|Supervisor))/);
+  if (m2) return m2[1].trim();
+  return null;
+}
+
+function extractEmail(text) {
+  const m = text.match(/[\w.+-]+@[\w.-]+\.\w+/);
+  return m ? m[0] : null;
+}
+
+function extractClientName(text) {
+  const m = text.match(/(?:customer|client)\s+(?:is\s+)?([A-Z][\w\s]+?)(?:,|\s+contact)/i);
+  if (m) return m[1].trim();
+  const m2 = text.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:Inc|Corp|LLC|Co|Ltd|Foods|Group)\b/);
+  if (m2) return m2[0].trim();
+  return null;
+}
+
+function extractExpectedReceived(text) {
+  const result = { expected: [], received: [], damage: false, shortage: false };
+  const expectedM = text.match(/expected[:\s]+(.*?)(?:received|$)/i);
+  const receivedM = text.match(/received[:\s]+(.*?)(?:\n\n|dock|sign|$)/i);
+  if (expectedM) {
+    const skuPairs = expectedM[1].match(/SKU[:\s]*([A-Z0-9\-]+)[\s,]+x\s*(\d+)/gi);
+    if (skuPairs) {
+      skuPairs.forEach(p => {
+        const parts = p.match(/SKU[:\s]*([A-Z0-9\-]+)[\s,]+x\s*(\d+)/i);
+        if (parts) result.expected.push({ sku: parts[1], quantity: parseInt(parts[2], 10) });
+      });
+    }
+  }
+  if (receivedM) {
+    const skuPairs = receivedM[1].match(/SKU[:\s]*([A-Z0-9\-]+)[\s,]+x\s*(\d+)/gi);
+    if (skuPairs) {
+      skuPairs.forEach(p => {
+        const parts = p.match(/SKU[:\s]*([A-Z0-9\-]+)[\s,]+x\s*(\d+)/i);
+        if (parts) result.received.push({ sku: parts[1], quantity: parseInt(parts[2], 10) });
+      });
+    }
+  }
+  if (/\bdamag/i.test(text)) result.damage = true;
+  if (/\bshort\b|\bshortage\b/i.test(text)) result.shortage = true;
+  return result;
+}
+
+function detectExceptionRisk(text) {
+  const lower = text.toLowerCase();
+  let score = 0;
+  if (/\bdamag/i.test(text)) score += 2;
+  if (/\bshort\b|\bshortage\b|\bmissing\b/i.test(text)) score += 2;
+  if (/\bmismatch/i.test(text)) score += 2;
+  if (/\blate|delay/i.test(text)) score += 1;
+  if (/\bcomplain|angry|frustrat|third time/i.test(text)) score += 2;
+  if (/\bescalat/i.test(text)) score += 2;
+  if (/\bnew 3pl|new partner|other partner/i.test(text)) score += 2;
+  if (/\blosing money/i.test(text)) score += 1;
+  if (score >= 4) return "high";
+  if (score >= 2) return "medium";
+  return "low";
+}
+
+function detectPriority(text) {
+  const lower = text.toLowerCase();
+  if (/\bimmediately|asap|urgent|right away/i.test(text)) return "high";
+  if (/\bthird time|escalat|losing money|new partner/i.test(lower)) return "high";
+  if (/\bby end of (day|week|month)|need.*soon|need.*by/i.test(lower)) return "medium";
+  return "low";
+}
+
+function computeCompleteness(structuredData, missingFields) {
+  const allFields = ["origin", "destination", "pallet_count", "weight_lbs", "pickup_window", "delivery_window", "tracking_number", "order_number", "shipping_address", "items"];
+  const filledCount = allFields.filter(f => {
+    const val = structuredData[f];
+    if (val === null || val === undefined || val === "") return false;
+    if (Array.isArray(val) && val.length === 0) return false;
+    if (typeof val === "object" && !Array.isArray(val) && Object.keys(val).length === 0) return false;
+    return true;
+  }).length;
+  return Math.round((filledCount / allFields.length) * 100);
+}
+
+function buildMissingFields(structuredData, workflowType) {
+  const missing = [];
+  const requiredByType = {
+    quote_intake: ["origin", "destination", "pallet_count", "weight_lbs", "pickup_window"],
+    order_creation: ["shipping_address", "items"],
+    shipment_tracking: ["tracking_number", "order_number"],
+    receiving_exception: ["items"],
+    general_ops_triage: ["order_number"]
+  };
+  const required = requiredByType[workflowType] || [];
+  const fieldLabels = {
+    origin: "Origin city/location",
+    destination: "Destination city/location",
+    pallet_count: "Pallet count",
+    weight_lbs: "Weight (lbs)",
+    pickup_window: "Pickup window",
+    delivery_window: "Delivery deadline",
+    tracking_number: "Tracking number",
+    order_number: "Order number",
+    shipping_address: "Shipping address",
+    items: "Line items (SKU/qty)"
+  };
+  for (const field of required) {
+    const val = structuredData[field];
+    const isEmpty = val === null || val === undefined || val === "" ||
+      (Array.isArray(val) && val.length === 0) ||
+      (typeof val === "object" && !Array.isArray(val) && Object.keys(val).length === 0);
+    if (isEmpty) {
+      missing.push({ field, label: fieldLabels[field] || field, hint: `Required for ${WORKFLOW_LABELS[workflowType] || workflowType}` });
+    }
+  }
+  return missing;
+}
+
+function buildValidationWarnings(structuredData, text) {
+  const warnings = [];
+  if (structuredData.weight_lbs && structuredData.weight_lbs > 20000) {
+    warnings.push("Weight exceeds 20,000 lbs — may require LTL or FTL reclassification.");
+  }
+  if (structuredData.pallet_count && structuredData.pallet_count > 20) {
+    warnings.push("High pallet count — verify FTL vs LTL routing.");
+  }
+  if (structuredData.special_requirements && structuredData.special_requirements.length > 2) {
+    warnings.push("Multiple special requirements — confirm all accessorial charges.");
+  }
+  if (/\bfragile\b/i.test(text) && !/\bpadding|protect|wrap\b/i.test(text)) {
+    warnings.push("Fragile goods mentioned but no packaging instructions specified.");
+  }
+  if (/\bresidential\b/i.test(text) && !/\bliftgate\b/i.test(text)) {
+    warnings.push("Residential delivery without liftgate — confirm delivery requirements.");
+  }
+  return warnings;
+}
+
+function buildRecommendedActions(workflowType, structuredData, missingFields, exceptionRisk) {
+  const actions = [];
+  if (missingFields.length > 0) {
+    actions.push({
+      action: `Request missing fields: ${missingFields.map(f => f.label).join(", ")}`,
+      owner: "customer_service",
+      reason: "Cannot process workflow without required data."
+    });
+  }
+  if (workflowType === "quote_intake") {
+    actions.push({ action: "Generate freight quote with extracted parameters", owner: "system", reason: "Quote request has sufficient data to auto-generate." });
+    if (structuredData.special_requirements && structuredData.special_requirements.length > 0) {
+      actions.push({ action: `Verify accessorial charges: ${structuredData.special_requirements.join(", ")}`, owner: "operator", reason: "Special requirements affect pricing." });
+    }
+  }
+  if (workflowType === "order_creation") {
+    actions.push({ action: "Validate order against WMS inventory", owner: "system", reason: "Confirm SKU availability before processing." });
+    actions.push({ action: "Create shipment in TMS", owner: "system", reason: "Order data is ready for TMS entry." });
+  }
+  if (workflowType === "shipment_tracking") {
+    actions.push({ action: "Query carrier API for tracking status", owner: "system", reason: "Tracking number available for automated lookup." });
+    actions.push({ action: "Send status update to customer", owner: "customer_service", reason: "Customer is waiting for ETA." });
+  }
+  if (workflowType === "receiving_exception") {
+    actions.push({ action: "File receiving discrepancy report", owner: "operator", reason: "Quantity mismatch or damage detected." });
+    actions.push({ action: "Notify customer of exception", owner: "customer_service", reason: "Customer needs to be informed of shortage/damage." });
+  }
+  if (workflowType === "general_ops_triage" && exceptionRisk === "high") {
+    actions.push({ action: "Escalate to supervisor for review", owner: "supervisor", reason: "High exception risk detected in customer communication." });
+    actions.push({ action: "Prioritize response within 1 hour", owner: "customer_service", reason: "Customer expressed urgency or dissatisfaction." });
+  }
+  if (exceptionRisk === "high") {
+    actions.push({ action: "Flag account for retention review", owner: "supervisor", reason: "Multiple risk signals detected." });
+  }
+  return actions;
+}
+
+function buildSuggestedReply(workflowType, structuredData, missingFields) {
+  if (missingFields.length === 0) {
+    const replies = {
+      quote_intake: `Thank you for your quote request. We're preparing a rate for ${structuredData.pallet_count || "?"} pallet(s) from ${structuredData.origin || "origin"} to ${structuredData.destination || "destination"}. You'll receive the quote shortly.`,
+      order_creation: `We've received your order and are processing it now. We'll confirm shipment details once the order is validated against inventory.`,
+      shipment_tracking: `We're looking up the status of your shipment now. We'll provide an ETA as soon as we have an update from the carrier.`,
+      receiving_exception: `We've noted the receiving discrepancy and are investigating. We'll follow up with a resolution shortly.`,
+      general_ops_triage: `Thank you for reaching out. We're reviewing your request and will get back to you shortly.`
+    };
+    return replies[workflowType] || replies.general_ops_triage;
+  }
+  const fieldList = missingFields.map(f => f.label).join(", ");
+  return `Thank you for your request. To process this efficiently, we need a few more details: ${fieldList}. Could you provide these so we can move forward?`;
+}
+
+function buildApiPayload(workflowType, structuredData) {
+  if (workflowType === "order_creation") {
+    const addr = structuredData.shipping_address || {};
+    return {
+      store_id: 1,
+      warehouse_id: 1,
+      shipping_method_name: "Ground Shipping",
+      shipping_address: {
+        first_name: "",
+        last_name: structuredData.contact_name || "",
+        street1: addr.street1 || "",
+        city: addr.city || "",
+        state: addr.state || "",
+        postal_code: addr.postal_code || "",
+        country_code: addr.country_code || "US"
+      },
+      items: (structuredData.items || []).map(item => ({
+        sku: item.sku || "",
+        quantity: item.quantity || 1
+      }))
+    };
+  }
+  if (workflowType === "quote_intake") {
+    return {
+      origin: structuredData.origin || null,
+      destination: structuredData.destination || null,
+      pallet_count: structuredData.pallet_count || null,
+      weight_lbs: structuredData.weight_lbs || null,
+      special_requirements: structuredData.special_requirements || [],
+      pickup_window: structuredData.pickup_window || null,
+      delivery_window: structuredData.delivery_window || null,
+      service_level: "LTL"
+    };
+  }
+  if (workflowType === "shipment_tracking") {
+    return {
+      tracking_number: structuredData.tracking_number || null,
+      order_number: structuredData.order_number || null,
+      carrier: "auto-detect"
+    };
+  }
+  return structuredData;
+}
+
+function runFallbackParser(text) {
+  const workflowType = classifyWorkflow(text);
+  const structuredData = {
+    origin: extractOrigin(text),
+    destination: extractDestination(text),
+    pallet_count: extractPalletCount(text),
+    weight_lbs: extractWeight(text),
+    special_requirements: extractSpecialRequirements(text),
+    pickup_window: extractPickupWindow(text),
+    delivery_window: extractDeliveryWindow(text),
+    tracking_number: extractTrackingNumber(text),
+    order_number: extractOrderNumber(text),
+    shipping_address: extractShippingAddress(text),
+    items: extractSKUs(text),
+    contact_name: extractContactName(text),
+    contact_email: extractEmail(text),
+    client_name: extractClientName(text)
+  };
+
+  const missingFields = buildMissingFields(structuredData, workflowType);
+  const validationWarnings = buildValidationWarnings(structuredData, text);
+  const exceptionRisk = detectExceptionRisk(text);
+  const priority = detectPriority(text);
+  const completeness = computeCompleteness(structuredData, missingFields);
+  const recommendedActions = buildRecommendedActions(workflowType, structuredData, missingFields, exceptionRisk);
+  const suggestedReply = buildSuggestedReply(workflowType, structuredData, missingFields);
+  const apiPayload = buildApiPayload(workflowType, structuredData);
+
+  const summaryParts = [];
+  if (structuredData.client_name) summaryParts.push(`Client: ${structuredData.client_name}`);
+  summaryParts.push(`Workflow: ${WORKFLOW_LABELS[workflowType]}`);
+  if (structuredData.origin && structuredData.destination) summaryParts.push(`${structuredData.origin} → ${structuredData.destination}`);
+  if (structuredData.pallet_count) summaryParts.push(`${structuredData.pallet_count} pallet(s)`);
+  if (structuredData.weight_lbs) summaryParts.push(`${structuredData.weight_lbs.toLocaleString()} lbs`);
+  if (structuredData.tracking_number) summaryParts.push(`Tracking: ${structuredData.tracking_number}`);
+  if (structuredData.order_number) summaryParts.push(`Order: ${structuredData.order_number}`);
+
+  return {
+    workflow_type: workflowType,
+    summary: summaryParts.join(". ") + ".",
+    priority,
+    completeness_score: completeness,
+    exception_risk: exceptionRisk,
+    structured_data: structuredData,
+    missing_fields: missingFields,
+    validation_warnings: validationWarnings,
+    recommended_actions: recommendedActions,
+    suggested_customer_reply: suggestedReply,
+    api_payload: apiPayload,
+    confidence: completeness >= 80 ? "high" : completeness >= 50 ? "medium" : "low",
+    _source: "fallback"
+  };
+}
+
+// ============================================================
+// NORMALIZE AI WORKER OUTPUT
+// ============================================================
+
+function normalizeWorkerResult(raw) {
+  const structuredData = raw.structured_data || {};
+  const workflowType = WORKFLOW_TYPES.includes(raw.workflow_type) ? raw.workflow_type : classifyWorkflow(raw.summary || "");
+
+  // Merge with fallback for any missing structured fields
+  const normalizedData = {
+    origin: structuredData.origin || null,
+    destination: structuredData.destination || null,
+    pallet_count: structuredData.pallet_count != null ? Number(structuredData.pallet_count) || null : null,
+    weight_lbs: structuredData.weight_lbs != null ? Number(structuredData.weight_lbs) || null : null,
+    special_requirements: Array.isArray(structuredData.special_requirements) ? structuredData.special_requirements : [],
+    pickup_window: structuredData.pickup_window || null,
+    delivery_window: structuredData.delivery_window || null,
+    tracking_number: structuredData.tracking_number || null,
+    order_number: structuredData.order_number || null,
+    shipping_address: structuredData.shipping_address || {},
+    items: Array.isArray(structuredData.items) ? structuredData.items.map(item => ({
+      sku: item.sku || "",
+      quantity: Number(item.quantity) || 1
+    })) : [],
+    contact_name: structuredData.contact_name || null,
+    contact_email: structuredData.contact_email || null,
+    client_name: structuredData.client_name || null
+  };
+
+  const missingFields = Array.isArray(raw.missing_fields)
+    ? raw.missing_fields.map(f => typeof f === "string" ? { field: f, label: f, hint: "" } : f)
+    : [];
+  const validationWarnings = Array.isArray(raw.validation_warnings)
+    ? raw.validation_warnings.map(w => typeof w === "string" ? w : String(w))
+    : [];
+  const recommendedActions = Array.isArray(raw.recommended_actions)
+    ? raw.recommended_actions.map(a => ({
+        action: a.action || a.item || "",
+        owner: a.owner || "operator",
+        reason: a.reason || a.rationale || ""
+      }))
+    : [];
+
+  const completeness = typeof raw.completeness_score === "number"
+    ? Math.min(100, Math.max(0, raw.completeness_score))
+    : computeCompleteness(normalizedData, missingFields);
+
+  return {
+    workflow_type: workflowType,
+    summary: String(raw.summary || "").trim() || "No summary generated.",
+    priority: ["high", "medium", "low"].includes(raw.priority) ? raw.priority : "medium",
+    completeness_score: completeness,
+    exception_risk: ["high", "medium", "low"].includes(raw.exception_risk) ? raw.exception_risk : "low",
+    structured_data: normalizedData,
+    missing_fields: missingFields,
+    validation_warnings: validationWarnings,
+    recommended_actions: recommendedActions,
+    suggested_customer_reply: String(raw.suggested_customer_reply || "").trim() || "",
+    api_payload: raw.api_payload || buildApiPayload(workflowType, normalizedData),
+    confidence: ["high", "medium", "low"].includes(raw.confidence) ? raw.confidence : "medium",
+    _source: raw._source || "ai"
+  };
+}
+
+// ============================================================
+// MAIN PROCESSING
+// ============================================================
+
 async function processContent() {
-  // Cache DOM elements to avoid repeated queries
   const inputTextElement = document.getElementById("inputText");
   const runBtn = document.getElementById("runBtn");
   const loadingElement = document.getElementById("loading");
   const resultsElement = document.getElementById("results");
-  const insightsElement = document.getElementById("insights");
   const debugJsonElement = document.getElementById("debugJson");
   const debugSectionElement = document.getElementById("debugSection");
-  const summaryElement = document.getElementById("summary");
-  const actionsElement = document.getElementById("actions");
-  const draftElement = document.getElementById("draft");
-  const crmElement = document.getElementById("crm");
   const modelSelectElement = document.getElementById("modelSelect");
 
   const inputText = inputTextElement.value.trim();
 
   if (!inputText) {
-    alert("Please enter content");
+    showToast("Please enter logistics content to analyze.");
     return;
   }
 
   runBtn.disabled = true;
   loadingElement.classList.remove("hidden");
   resultsElement.classList.add("hidden");
-  insightsElement.classList.add("hidden");
   startLoadingMeter();
 
+  let result;
+
   try {
-    // 1st attempt
+    // Try AI worker first
     const model = modelSelectElement?.value || "";
     const data1 = await callWorker(DEFAULT_WORKER, inputText, model);
-    let result;
+    let rawResult;
     try {
       const raw1 = data1?.choices?.[0]?.message?.content || "";
-      result = raw1 ? tryParseJsonLoose(raw1) : data1;
-      // Show debug JSON
-      debugJsonElement.textContent = JSON.stringify(result, null, 2);
-      debugSectionElement.classList.remove("hidden");
+      rawResult = raw1 ? tryParseJsonLoose(raw1) : data1;
     } catch (e) {
-      // 2nd attempt: ask model to output ONLY valid JSON again
-      const data2 = await callWorker(DEFAULT_WORKER, inputText, model);
-      const raw2 = data2?.choices?.[0]?.message?.content || "";
-      result = raw2 ? tryParseJsonLoose(raw2) : data2;
+      // Retry once
+      try {
+        const data2 = await callWorker(DEFAULT_WORKER, inputText, model);
+        const raw2 = data2?.choices?.[0]?.message?.content || "";
+        rawResult = raw2 ? tryParseJsonLoose(raw2) : data2;
+      } catch (e2) {
+        // Second parse failed, use fallback
+        rawResult = null;
+      }
     }
-
-    // Normalize action items once and reuse
-    const normalizedActionItems = normalizeActionItems(result.action_items);
-
-    renderDashboard(result, normalizedActionItems);
-    renderActionMatrix(result, normalizedActionItems);
-    renderConfidence(result);
-    renderInsights(result, inputText, normalizedActionItems);
-
-    // Render results
-    summaryElement.textContent = result.summary || "";
-    renderActionItems(result, normalizedActionItems);
-    draftElement.textContent = result.draft_content || "";
-
-    const crm = result.crm_data || {};
-    crmElement.innerHTML = Object.entries(crm)
-      .map(([k, v]) => `<p><strong>${escapeHtml(k)}:</strong> ${escapeHtml(formatValue(v))}</p>`)
-      .join("");
-
-    resultsElement.classList.remove("hidden");
+    if (rawResult) {
+      result = normalizeWorkerResult(rawResult);
+    } else {
+      result = runFallbackParser(inputText);
+    }
   } catch (error) {
-    alert("Error: " + error.message);
-  } finally {
-    finishLoadingMeter();
-    loadingElement.classList.add("hidden");
-    runBtn.disabled = false;
+    // Worker unreachable — use fallback parser
+    result = runFallbackParser(inputText);
+    result._source = "fallback";
   }
+
+  // Show debug JSON
+  debugJsonElement.textContent = JSON.stringify(result, null, 2);
+  debugSectionElement.classList.remove("hidden");
+
+  // Render all panels
+  renderMetrics(result);
+  renderSummary(result);
+  renderStructuredData(result);
+  renderMissingFields(result);
+  renderRecommendedActions(result);
+  renderSuggestedReply(result);
+  renderApiPayload(result);
+  renderConfidence(result);
+
+  resultsElement.classList.remove("hidden");
+  finishLoadingMeter();
+  loadingElement.classList.add("hidden");
+  runBtn.disabled = false;
+}
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+
+function renderMetrics(result) {
+  // Priority
+  const priorityCard = document.getElementById("priorityCard");
+  priorityCard.classList.remove("priority-high", "priority-medium", "priority-low");
+  const pClass = `priority-${result.priority}`;
+  priorityCard.classList.add(pClass);
+  document.getElementById("priorityValue").textContent = result.priority.charAt(0).toUpperCase() + result.priority.slice(1);
+  const prioritySubs = { high: "Immediate attention needed", medium: "Process within SLA", low: "Normal queue" };
+  document.getElementById("prioritySub").textContent = prioritySubs[result.priority] || "";
+
+  // Workflow
+  document.getElementById("workflowValue").textContent = WORKFLOW_LABELS[result.workflow_type] || result.workflow_type;
+  document.getElementById("workflowSub").textContent = "Classified workflow type";
+
+  // Completeness
+  const score = result.completeness_score;
+  document.getElementById("completenessValue").textContent = `${score}%`;
+  const compSubs = { high: "Most fields populated", medium: "Some fields missing", low: "Key fields missing" };
+  document.getElementById("completenessSub").textContent = score >= 80 ? compSubs.high : score >= 50 ? compSubs.medium : compSubs.low;
+
+  // Exception Risk
+  const exceptionCard = document.getElementById("exceptionCard");
+  exceptionCard.classList.remove("exception-high", "exception-medium", "exception-low");
+  exceptionCard.classList.add(`exception-${result.exception_risk}`);
+  document.getElementById("exceptionValue").textContent = result.exception_risk.charAt(0).toUpperCase() + result.exception_risk.slice(1);
+  const riskSubs = { high: "Escalation likely", medium: "Monitor closely", low: "No flags" };
+  document.getElementById("exceptionSub").textContent = riskSubs[result.exception_risk] || "";
+}
+
+function renderSummary(result) {
+  document.getElementById("summary").textContent = result.summary || "No summary available.";
+}
+
+function renderStructuredData(result) {
+  const container = document.getElementById("structuredData");
+  const data = result.structured_data || {};
+  const fields = [
+    { key: "client_name", label: "Client" },
+    { key: "contact_name", label: "Contact" },
+    { key: "contact_email", label: "Email" },
+    { key: "origin", label: "Origin" },
+    { key: "destination", label: "Destination" },
+    { key: "pallet_count", label: "Pallets" },
+    { key: "weight_lbs", label: "Weight (lbs)" },
+    { key: "pickup_window", label: "Pickup Window" },
+    { key: "delivery_window", label: "Delivery Window" },
+    { key: "tracking_number", label: "Tracking #" },
+    { key: "order_number", label: "Order #" }
+  ];
+
+  let html = '<table class="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>';
+  for (const field of fields) {
+    const val = data[field.key];
+    const isEmpty = val === null || val === undefined || val === "";
+    html += `<tr><td>${escapeHtml(field.label)}</td><td class="${isEmpty ? "missing" : "present"}">${isEmpty ? "— not provided —" : escapeHtml(String(val))}</td></tr>`;
+  }
+
+  // Special requirements
+  const reqs = data.special_requirements || [];
+  html += `<tr><td>Special Req.</td><td class="${reqs.length ? "present" : "missing"}">${reqs.length ? reqs.map(r => escapeHtml(r)).join(", ") : "— none —"}</td></tr>`;
+
+  // Shipping address
+  const addr = data.shipping_address || {};
+  const addrParts = [addr.street1, addr.city, addr.state, addr.postal_code].filter(Boolean);
+  html += `<tr><td>Ship-To Address</td><td class="${addrParts.length ? "present" : "missing"}">${addrParts.length ? escapeHtml(addrParts.join(", ")) : "— not provided —"}</td></tr>`;
+
+  // Items
+  const items = data.items || [];
+  if (items.length) {
+    html += `<tr><td>Line Items</td><td class="present">${items.map(i => escapeHtml(`${i.sku} x ${i.quantity}`)).join("<br>")}</td></tr>`;
+  } else {
+    html += `<tr><td>Line Items</td><td class="missing">— none extracted —</td></tr>`;
+  }
+
+  html += "</tbody></table>";
+  container.innerHTML = html;
+}
+
+function renderMissingFields(result) {
+  const missingContainer = document.getElementById("missingFieldsList");
+  const warningsContainer = document.getElementById("validationWarnings");
+
+  const missing = result.missing_fields || [];
+  if (missing.length === 0) {
+    missingContainer.innerHTML = '<div class="action-meta">All required fields present ✓</div>';
+  } else {
+    missingContainer.innerHTML = missing.map(f =>
+      `<div class="missing-field"><span class="field-name">${escapeHtml(f.label || f.field)}</span><span class="field-hint">— ${escapeHtml(f.hint || "required")}</span></div>`
+    ).join("");
+  }
+
+  const warnings = result.validation_warnings || [];
+  if (warnings.length === 0) {
+    warningsContainer.innerHTML = '<div class="action-meta">No validation warnings ✓</div>';
+  } else {
+    warningsContainer.innerHTML = warnings.map(w =>
+      `<div class="validation-warning">⚠ ${escapeHtml(typeof w === "string" ? w : String(w))}</div>`
+    ).join("");
+  }
+}
+
+function renderRecommendedActions(result) {
+  const container = document.getElementById("actions");
+  const actions = result.recommended_actions || [];
+  const groups = { system: [], operator: [], customer_service: [], supervisor: [], other: [] };
+
+  actions.forEach(a => {
+    const owner = String(a.owner || "").toLowerCase();
+    if (owner.includes("system")) groups.system.push(a);
+    else if (owner.includes("operator")) groups.operator.push(a);
+    else if (owner.includes("customer") || owner.includes("cs")) groups.customer_service.push(a);
+    else if (owner.includes("supervisor")) groups.supervisor.push(a);
+    else groups.other.push(a);
+  });
+
+  const ownerLabels = {
+    system: "System (Automated)",
+    operator: "Operator",
+    customer_service: "Customer Service",
+    supervisor: "Supervisor",
+    other: "Unassigned"
+  };
+
+  container.innerHTML = [
+    renderActionGroup(ownerLabels.system, groups.system),
+    renderActionGroup(ownerLabels.operator, groups.operator),
+    renderActionGroup(ownerLabels.customer_service, groups.customer_service),
+    renderActionGroup(ownerLabels.supervisor, groups.supervisor),
+    renderActionGroup(ownerLabels.other, groups.other)
+  ].filter(Boolean).join("");
+
+  container.querySelectorAll(".action-btn").forEach(btn => {
+    btn.addEventListener("click", () => showToast("Action created."));
+  });
+}
+
+function renderActionGroup(title, items) {
+  if (!items.length) return "";
+  const rows = items.map(item => {
+    const reason = item.reason ? `<div class="action-meta">${escapeHtml(item.reason)}</div>` : "";
+    return [
+      '<div class="action-row">',
+      `<div><strong>${escapeHtml(item.action)}</strong>${reason}</div>`,
+      '<button class="action-btn" type="button">Create</button>',
+      "</div>"
+    ].join("");
+  }).join("");
+  return `<div class="action-group"><h4>${escapeHtml(title)}</h4>${rows}</div>`;
+}
+
+function renderSuggestedReply(result) {
+  document.getElementById("draftReply").textContent = result.suggested_customer_reply || "No reply template generated.";
+}
+
+let currentPayloadTab = "order";
+
+function renderApiPayload(result) {
+  const payload = result.api_payload || {};
+  const payloadEl = document.getElementById("apiPayload");
+
+  // Store all payload variants
+  window._payloadCache = {
+    order: result.workflow_type === "order_creation" ? payload : buildApiPayload("order_creation", result.structured_data || {}),
+    quote: result.workflow_type === "quote_intake" ? payload : buildApiPayload("quote_intake", result.structured_data || {}),
+    tracking: result.workflow_type === "shipment_tracking" ? payload : buildApiPayload("shipment_tracking", result.structured_data || {})
+  };
+
+  // Show the tab matching the workflow type
+  const tabMap = { quote_intake: "quote", order_creation: "order", shipment_tracking: "tracking" };
+  const defaultTab = tabMap[result.workflow_type] || "order";
+  switchPayloadTab(defaultTab);
+}
+
+function switchPayloadTab(tab) {
+  currentPayloadTab = tab;
+  const payloadEl = document.getElementById("apiPayload");
+  const cache = window._payloadCache || {};
+  payloadEl.textContent = JSON.stringify(cache[tab] || {}, null, 2);
+
+  document.querySelectorAll(".payload-tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.tab === tab);
+  });
+}
+
+function renderConfidence(result) {
+  const banner = document.getElementById("confidenceBanner");
+  if (!banner) return;
+  const confidence = String(result?.confidence || "").toLowerCase();
+  banner.classList.remove("medium");
+  if (!confidence || confidence === "high") {
+    banner.classList.add("hidden");
+    banner.textContent = "";
+    return;
+  }
+  if (confidence === "medium") {
+    banner.textContent = `Medium confidence${result._source === "fallback" ? " (offline mode)" : ""}: review the output before acting.`;
+    banner.classList.add("medium");
+  } else {
+    banner.textContent = `Low confidence${result._source === "fallback" ? " (offline mode)" : ""}: verify details before acting on this analysis.`;
+  }
+  banner.classList.remove("hidden");
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 1800);
 }
 
 function setInputText(value, toastMessage) {
@@ -254,9 +1007,9 @@ function insertSampleInput() {
 function populateSampleSelect() {
   const sampleSelect = document.getElementById("sampleSelect");
   if (!sampleSelect) return;
-  const options = SAMPLE_INPUTS.map((sample) => (
+  const options = SAMPLE_INPUTS.map((sample) =>
     `<option value="${escapeHtml(sample.id)}">${escapeHtml(sample.label)}</option>`
-  )).join("");
+  ).join("");
   sampleSelect.insertAdjacentHTML("beforeend", options);
 }
 
@@ -290,496 +1043,38 @@ async function loadModelInfo() {
   }
 }
 
-function renderDashboard(result, normalizedActionItems) {
-  // Use provided normalizedActionItems if available, otherwise normalize here
-  const actionItems = normalizedActionItems || normalizeActionItems(result.action_items);
+// ============================================================
+// INITIALIZATION
+// ============================================================
 
-  const crm = result.crm_data || {};
-  const priorityInfo = normalizePriority(crm.priority);
-  const priorityCard = document.getElementById("priorityCard");
-  priorityCard.classList.remove("priority-high", "priority-medium", "priority-low");
-  priorityCard.classList.add(priorityInfo.className);
-  document.getElementById("priorityValue").textContent = priorityInfo.label;
-  document.getElementById("prioritySub").textContent = priorityInfo.sub;
-
-  const budgetValue = crm.budget ? String(crm.budget) : "—";
-  document.getElementById("budgetValue").textContent = budgetValue;
-  document.getElementById("budgetSub").textContent = crm.budget ? "Budget extracted" : "Not specified";
-
-  const rawDeadlines = [];
-  if (crm.deadline) rawDeadlines.push(String(crm.deadline));
-  for (const item of actionItems) {
-    if (item?.deadline) rawDeadlines.push(String(item.deadline));
-  }
-  const parsedDeadlines = rawDeadlines
-    .map((value) => parseDeadline(value))
-    .filter(Boolean);
-  const deadlineDate = pickSoonestDeadline(parsedDeadlines);
-  const deadlineValueEl = document.getElementById("deadlineValue");
-  const deadlineSubEl = document.getElementById("deadlineSub");
-  if (deadlineDate) {
-    const daysRemaining = daysBetween(new Date(), deadlineDate);
-    const absDays = Math.abs(daysRemaining);
-    if (daysRemaining >= 0) {
-      deadlineValueEl.textContent = `${daysRemaining} days`;
-      deadlineSubEl.textContent = `Next due: ${deadlineDate.toLocaleDateString()}`;
-    } else {
-      deadlineValueEl.textContent = `Overdue by ${absDays} days`;
-      deadlineSubEl.textContent = `Past due: ${deadlineDate.toLocaleDateString()}`;
-    }
-  } else if (rawDeadlines.length) {
-    deadlineValueEl.textContent = rawDeadlines[0];
-    deadlineSubEl.textContent = "Timeline noted";
-  } else {
-    deadlineValueEl.textContent = "—";
-    deadlineSubEl.textContent = "No deadline found";
-  }
-
-  const sentimentInfo = normalizeSentiment(crm.sentiment, result.summary || "");
-  document.getElementById("sentimentValue").textContent = sentimentInfo.label;
-  document.getElementById("sentimentSub").textContent = sentimentInfo.sub;
-}
-
-function renderConfidence(result) {
-  const banner = document.getElementById("confidenceBanner");
-  if (!banner) return;
-  const confidence = String(result?.confidence || "").toLowerCase();
-  banner.classList.remove("medium");
-  if (!confidence || confidence === "high") {
-    banner.classList.add("hidden");
-    banner.textContent = "";
-    return;
-  }
-  if (confidence === "medium") {
-    banner.textContent = "Medium confidence: review the output before acting.";
-    banner.classList.add("medium");
-  } else {
-    banner.textContent = "Low confidence: verify details before acting on this analysis.";
-  }
-  banner.classList.remove("hidden");
-}
-
-function renderActionMatrix(result, normalizedActionItems) {
-  const buckets = {
-    critical: document.getElementById("matrixCritical"),
-    strategic: document.getElementById("matrixStrategic"),
-    quick: document.getElementById("matrixQuick"),
-    monitor: document.getElementById("matrixMonitor")
-  };
-  for (const key of Object.keys(buckets)) {
-    const bucket = buckets[key];
-    bucket.querySelectorAll(".matrix-item").forEach((el) => el.remove());
-  }
-
-  // Use provided normalizedActionItems if available, otherwise normalize here
-  const items = normalizedActionItems || normalizeActionItems(result.action_items);
-
-  const crm = result.crm_data || {};
-  const budget = Number(crm.budget || 0);
-  const highImpactGlobal = budget >= 25000 || String(crm.priority || "").toLowerCase().startsWith("high");
-
-  if (!items.length) {
-    Object.values(buckets).forEach((bucket) => {
-      const row = document.createElement("div");
-      row.className = "matrix-item";
-      row.textContent = "No action items yet.";
-      bucket.appendChild(row);
-    });
-    return;
-  }
-
-  items.forEach((item) => {
-    const deadlineDate = parseDeadline(item.deadline);
-    const days = deadlineDate ? daysBetween(new Date(), deadlineDate) : null;
-    const highUrgency = days !== null && days <= 14;
-    const highImpact = highImpactGlobal;
-    const key = highImpact && highUrgency
-      ? "critical"
-      : highImpact && !highUrgency
-      ? "strategic"
-      : !highImpact && highUrgency
-      ? "quick"
-      : "monitor";
-    const row = document.createElement("div");
-    row.className = "matrix-item";
-    row.textContent = item.item;
-    buckets[key].appendChild(row);
-  });
-}
-
-function renderInsights(result, inputText, normalizedActionItems) {
-  const panel = document.getElementById("insights");
-  if (!panel) return;
-
-  const analysis = analyzeText(inputText || "");
-
-  // Use provided normalizedActionItems if available, otherwise normalize here
-  const items = normalizedActionItems || normalizeActionItems(result.action_items);
-
-  const crm = result.crm_data || {};
-  const evidenceCoverage = items.filter((item) => item.evidence && item.evidence !== "Not provided").length;
-  const coveragePct = items.length ? Math.round((evidenceCoverage / items.length) * 100) : 0;
-
-  const textStats = [
-    statRow("Word count", String(analysis.wordCount)),
-    statRow("Sentences", String(analysis.sentenceCount)),
-    statRow("Avg words/sentence", String(analysis.avgWords)),
-    statRow("Unique keywords", String(analysis.keywords.length)),
-    statRow("Evidence coverage", `${coveragePct}%`),
-  ].join("");
-
-  const urgencyScore = computeUrgencyScore(result, analysis);
-  const sentimentScore = Math.round(((analysis.sentimentScore + 1) / 2) * 100);
-  const toneChips = [
-    sentimentChip(analysis.sentimentScore),
-    urgencyScore > 60 ? '<span class="chip urgent">High urgency</span>' : '<span class="chip">Steady pace</span>',
-    crm.priority ? `<span class="chip">${escapeHtml(String(crm.priority))} priority</span>` : "",
-  ].filter(Boolean).join("");
-
-  const toneStats = [
-    meterRow("Sentiment index", sentimentScore),
-    meterRow("Urgency index", urgencyScore),
-    `<div class="muted-small" style="margin-top: 8px;">${toneChips}</div>`,
-  ].join("");
-
-  const keywordStats = analysis.keywords.length
-    ? analysis.keywords.map(([word, count]) => barRow(word, count, analysis.keywords[0][1])).join("")
-    : '<div class="muted-small">No dominant keywords detected.</div>';
-
-  const markovStats = analysis.transitions.length
-    ? analysis.transitions.map((item) => statRow(item.pair, String(item.count))).join("")
-    : '<div class="muted-small">Not enough text for transitions.</div>';
-
-  const evidenceStats = buildEvidenceMap(items, result.summary || "", crm.key_requirement || "");
-
-  document.getElementById("textStats").innerHTML = textStats;
-  document.getElementById("toneStats").innerHTML = toneStats;
-  document.getElementById("keywordStats").innerHTML = keywordStats;
-  document.getElementById("markovStats").innerHTML = markovStats;
-  document.getElementById("evidenceStats").innerHTML = evidenceStats;
-
-  panel.classList.remove("hidden");
-}
-
-function renderActionItems(result, normalizedActionItems) {
-  const container = document.getElementById("actions");
-  const groups = { us: [], client: [], shared: [], other: [] };
-
-  // Use provided normalizedActionItems if available, otherwise normalize here
-  const items = normalizedActionItems || normalizeActionItems(result.action_items);
-
-  items.forEach((item) => {
-    const owner = String(item.owner || "").toLowerCase();
-    if (owner.includes("client")) groups.client.push(item);
-    else if (owner.includes("shared")) groups.shared.push(item);
-    else if (owner.includes("us")) groups.us.push(item);
-    else groups.other.push(item);
-  });
-
-  container.innerHTML = [
-    renderActionGroup("Our team", groups.us),
-    renderActionGroup("Client", groups.client),
-    renderActionGroup("Shared", groups.shared),
-    renderActionGroup("Unassigned", groups.other)
-  ].filter(Boolean).join("");
-
-  container.querySelectorAll(".task-btn").forEach((btn) => {
-    btn.addEventListener("click", () => showToast("Task created."));
-  });
-}
-
-function renderActionGroup(title, items) {
-  if (!items.length) return "";
-  const rows = items.map((item) => {
-    const metaParts = [];
-    if (item.deadline) metaParts.push(`Due: ${escapeHtml(item.deadline)}`);
-    if (item.owner) metaParts.push(`Owner: ${escapeHtml(item.owner)}`);
-    const rationale = item.rationale ? `<div class="task-meta">${escapeHtml(item.rationale)}</div>` : "";
-    const evidence = item.evidence ? `<div class="task-meta">Evidence: ${escapeHtml(item.evidence)}</div>` : "";
-    return [
-      '<div class="task-row">',
-      `<div><div><strong>${escapeHtml(item.item)}</strong></div><div class="task-meta">${metaParts.join(" • ")}</div>${rationale}${evidence}</div>`,
-      '<button class="task-btn" type="button">Create Task</button>',
-      "</div>"
-    ].join("");
-  }).join("");
-  return `<div class="task-group"><h4>${escapeHtml(title)}</h4>${rows}</div>`;
-}
-
-function showToast(message) {
-  const toast = document.getElementById("toast");
-  if (!toast) return;
-  toast.textContent = message;
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 1800);
-}
-
-function parseDeadline(value) {
-  if (!value || typeof value !== "string") return null;
-  const lower = value.trim().toLowerCase();
-  const today = new Date();
-  const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const weekdayNames = "(monday|tuesday|wednesday|thursday|friday|saturday|sunday)";
-
-  if (lower === "today") return base;
-  if (lower === "tomorrow") return addDays(base, 1);
-  if (lower.includes("end of week")) return nextWeekday(base, 5);
-  if (lower.includes("next week")) return addDays(base, 7);
-  if (lower.includes("end of month")) {
-    return new Date(base.getFullYear(), base.getMonth() + 1, 0);
-  }
-
-  const weekdayMatch = lower.match(new RegExp(`next ${weekdayNames}`));
-  if (weekdayMatch) return nextNamedWeekday(base, weekdayMatch[1]);
-
-  const bareWeekdayMatch = lower.match(new RegExp(`^${weekdayNames}$`));
-  if (bareWeekdayMatch) return nextNamedWeekday(base, bareWeekdayMatch[1], true);
-
-  const inMatch = lower.match(/in (\d+)\s*(day|days|week|weeks)/);
-  if (inMatch) {
-    const amount = Number(inMatch[1]);
-    const multiplier = inMatch[2].startsWith("week") ? 7 : 1;
-    return addDays(base, amount * multiplier);
-  }
-
-  const parsed = Date.parse(value);
-  if (Number.isNaN(parsed)) return null;
-  return new Date(parsed);
-}
-
-function daysBetween(start, end) {
-  const ms = end.getTime() - start.getTime();
-  return Math.ceil(ms / 86400000);
-}
-
-function addDays(date, amount) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + amount);
-  return next;
-}
-
-function nextWeekday(date, weekday, allowSameDay) {
-  const result = new Date(date);
-  const diffRaw = (weekday - result.getDay() + 7) % 7;
-  const diff = diffRaw === 0 && !allowSameDay ? 7 : diffRaw;
-  result.setDate(result.getDate() + diff);
-  return result;
-}
-
-function nextNamedWeekday(date, name, allowSameDay) {
-  const map = {
-    sunday: 0,
-    monday: 1,
-    tuesday: 2,
-    wednesday: 3,
-    thursday: 4,
-    friday: 5,
-    saturday: 6
-  };
-  return nextWeekday(date, map[name], allowSameDay);
-}
-
-function pickSoonestDeadline(dates) {
-  if (!dates.length) return null;
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const future = dates.filter((date) => date >= startOfToday);
-  if (future.length) {
-    return new Date(Math.min(...future.map((date) => date.getTime())));
-  }
-  return new Date(Math.max(...dates.map((date) => date.getTime())));
-}
-
-function normalizePriority(priority) {
-  const value = String(priority || "").toLowerCase();
-  if (value.startsWith("high")) {
-    return { label: "High", className: "priority-high", sub: "Escalate decisions quickly" };
-  }
-  if (value.startsWith("medium")) {
-    return { label: "Medium", className: "priority-medium", sub: "Keep momentum" };
-  }
-  if (value.startsWith("low")) {
-    return { label: "Low", className: "priority-low", sub: "Monitor and follow up" };
-  }
-  return { label: "Unknown", className: "priority-low", sub: "No clear priority" };
-}
-
-function normalizeSentiment(sentiment, summary) {
-  const raw = String(sentiment || "").toLowerCase();
-  if (raw.includes("urgent")) return { label: "Urgent", sub: "Needs immediate attention" };
-  if (raw.includes("concern")) return { label: "Concerned", sub: "Address risks quickly" };
-  if (raw.includes("excited")) return { label: "Excited", sub: "Momentum is strong" };
-  if (raw.includes("satisfied")) return { label: "Satisfied", sub: "Relationship is stable" };
-  if (raw.includes("neutral")) return { label: "Neutral", sub: "No strong sentiment" };
-
-  const summaryText = summary.toLowerCase();
-  if (summaryText.includes("dip") || summaryText.includes("risk") || summaryText.includes("concern")) {
-    return { label: "Concerned", sub: "Potential friction detected" };
-  }
-  if (summaryText.includes("excited") || summaryText.includes("strong") || summaryText.includes("great")) {
-    return { label: "Excited", sub: "Positive momentum" };
-  }
-  return { label: "Neutral", sub: "No strong sentiment" };
-}
-
-function formatValue(v) {
-  if (v === null || v === undefined) return "—";
-  if (Array.isArray(v)) return v.join(", ");
-  return String(v);
-}
-
-function normalizeActionItems(items) {
-  if (!Array.isArray(items)) return [];
-  return items.map((item) => {
-    if (typeof item === "string") {
-      return { item, rationale: "Not provided", evidence: "Not provided", owner: "", deadline: "" };
-    }
-    return {
-      item: item?.item || "Untitled action",
-      rationale: item?.rationale || "Not provided",
-      evidence: item?.evidence || "Not provided",
-      owner: item?.owner || "",
-      deadline: item?.deadline || ""
-    };
-  });
-}
-
-function analyzeText(text) {
-  const lower = String(text || "").toLowerCase();
-  const words = lower.match(/[a-z0-9][a-z0-9'-]*/g) || [];
-  const sentences = String(text || "").split(/[.!?]+/).map((s) => s.trim()).filter(Boolean);
-  const stopwords = new Set([
-    "the","and","for","are","with","this","that","from","your","you","our","was","were","have","has","had","but","not","all","any","can","will","just",
-    "like","into","over","then","than","they","them","their","its","it's","about","also","there","here","when","what","why","how","who","whom","which",
-    "a","an","to","of","in","on","at","by","as","is","it","be","or","if","we","us","i","me","my","mine","he","she","his","her","hers","their","ours"
-  ]);
-  const freq = {};
-  words.forEach((w) => {
-    if (w.length < 3 || stopwords.has(w)) return;
-    freq[w] = (freq[w] || 0) + 1;
-  });
-  const keywords = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 6);
-
-  const positiveWords = new Set(["win","growth","increase","excited","happy","strong","clear","approved","ready","opportunity","love","great","good","success"]);
-  const negativeWords = new Set(["risk","concern","delay","issue","blocked","problem","churn","loss","unclear","urgent","overdue","late","cancel"]);
-  const urgentWords = new Set(["asap","urgent","immediately","deadline","soon","tomorrow","today","eow","eod","overdue","rush","critical"]);
-  let pos = 0;
-  let neg = 0;
-  let urgent = 0;
-  words.forEach((w) => {
-    if (positiveWords.has(w)) pos += 1;
-    if (negativeWords.has(w)) neg += 1;
-    if (urgentWords.has(w)) urgent += 1;
-  });
-  const sentimentScore = pos + neg ? (pos - neg) / (pos + neg) : 0;
-
-  const transitions = buildMarkovTransitions(words);
-
-  return {
-    wordCount: words.length,
-    sentenceCount: sentences.length || 1,
-    avgWords: Math.round(words.length / (sentences.length || 1)),
-    keywords,
-    sentimentScore,
-    urgent,
-    transitions,
-  };
-}
-
-function buildMarkovTransitions(words) {
-  if (words.length < 3) return [];
-  const minLen = 3;
-  const map = {};
-  for (let i = 0; i < words.length - 1; i += 1) {
-    const from = words[i];
-    const to = words[i + 1];
-    if (from.length < minLen || to.length < minLen) continue;
-    if (!map[from]) map[from] = {};
-    map[from][to] = (map[from][to] || 0) + 1;
-  }
-  const pairs = [];
-  Object.keys(map).forEach((from) => {
-    Object.keys(map[from]).forEach((to) => {
-      pairs.push({ pair: `${from} -> ${to}`, count: map[from][to] });
-    });
-  });
-  return pairs.sort((a, b) => b.count - a.count).slice(0, 8);
-}
-
-function computeUrgencyScore(result, analysis) {
-  const urgencyMap = { none: 10, low: 35, medium: 60, high: 85 };
-  const timeUrgency = String(result?.time_analysis?.overall_urgency || "").toLowerCase();
-  const base = urgencyMap[timeUrgency] || 30;
-  const boosted = base + Math.min(20, analysis.urgent * 5);
-  return Math.min(100, boosted);
-}
-
-function statRow(label, value) {
-  return `<div class="stat-row"><span class="stat-label">${escapeHtml(label)}</span><span>${escapeHtml(value)}</span></div>`;
-}
-
-function meterRow(label, value) {
-  const safe = Number.isFinite(value) ? value : 0;
-  return [
-    '<div class="bar-row">',
-    `<div class="stat-label">${escapeHtml(label)}</div>`,
-    '<div class="bar-track"><div class="bar-fill" style="width: ' + Math.min(100, Math.max(0, safe)) + '%;"></div></div>',
-    `<div>${Math.round(safe)}%</div>`,
-    "</div>",
-  ].join("");
-}
-
-function barRow(label, value, maxValue) {
-  const width = maxValue ? (value / maxValue) * 100 : 0;
-  return [
-    '<div class="bar-row">',
-    `<div>${escapeHtml(label)}</div>`,
-    '<div class="bar-track"><div class="bar-fill" style="width: ' + Math.min(100, Math.max(0, width)) + '%;"></div></div>',
-    `<div>${escapeHtml(String(value))}</div>`,
-    "</div>",
-  ].join("");
-}
-
-function sentimentChip(score) {
-  if (score >= 0.2) return '<span class="chip positive">Positive lean</span>';
-  if (score <= -0.2) return '<span class="chip negative">Risk signals</span>';
-  return '<span class="chip">Neutral tone</span>';
-}
-
-function buildEvidenceMap(items, summary, keyRequirement) {
-  if (!items.length) {
-    return '<div class="muted-small">No action items to map yet.</div>';
-  }
-  const header = [
-    summary ? `<div class="muted-small">Summary signal: ${escapeHtml(summary)}</div>` : "",
-    keyRequirement ? `<div class="muted-small">Key requirement: ${escapeHtml(keyRequirement)}</div>` : "",
-  ].filter(Boolean).join("");
-  const body = items.map((item) => {
-    const evidence = item.evidence && item.evidence !== "Not provided"
-      ? escapeHtml(item.evidence)
-      : "No evidence provided";
-    return [
-      '<div class="evidence-item">',
-      `<div class="evidence-title">${escapeHtml(item.item)}</div>`,
-      `<div class="muted-small">Why: ${escapeHtml(item.rationale)}</div>`,
-      `<div class="muted-small">Evidence: ${evidence}</div>`,
-      "</div>",
-    ].join("");
-  }).join("");
-  return header + body;
-}
-
-function escapeHtml(s) {
-  return String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-// Initialize the app when the DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
   loadModelInfo();
   populateSampleSelect();
+
+  // Attach event listeners (no inline onclick)
+  const runBtn = document.getElementById("runBtn");
+  if (runBtn) runBtn.addEventListener("click", processContent);
+
+  const insertBtn = document.getElementById("insertSampleBtn");
+  if (insertBtn) insertBtn.addEventListener("click", insertSampleInput);
+
+  // Payload tab switching
+  document.querySelectorAll(".payload-tab").forEach(tab => {
+    tab.addEventListener("click", () => switchPayloadTab(tab.dataset.tab));
+  });
+
+  // Copy payload button
+  const copyBtn = document.getElementById("copyPayloadBtn");
+  if (copyBtn) {
+    copyBtn.addEventListener("click", () => {
+      const payloadEl = document.getElementById("apiPayload");
+      if (payloadEl && payloadEl.textContent) {
+        navigator.clipboard.writeText(payloadEl.textContent).then(() => {
+          showToast("Payload copied to clipboard.");
+        }).catch(() => {
+          showToast("Copy failed — select and copy manually.");
+        });
+      }
+    });
+  }
 });

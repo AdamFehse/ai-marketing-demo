@@ -4,7 +4,10 @@ button:focus,
 select:focus,
 textarea:focus,
 details:focus,
-summary:focus {
+summary:focus,
+.payload-tab:focus,
+.copy-btn:focus,
+.action-btn:focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -16,11 +19,15 @@ summary:focus {
   }
 
   .result {
-    border-left: 4px solid var(--accent);
+    border-left: 3px solid var(--accent);
   }
 
   .metric-card {
     box-shadow: 0 0 0 2px var(--ink);
+  }
+
+  .payload-tab.active {
+    outline: 2px solid var(--accent);
   }
 }
 
@@ -52,7 +59,7 @@ summary:focus {
 }
 
 /* Better focus management for action items */
-.task-btn:focus {
+.action-btn:focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -62,7 +69,7 @@ summary:focus {
   color: var(--slate);
 }
 
-.task-meta {
+.action-meta {
   color: var(--slate);
 }
 
@@ -72,9 +79,11 @@ summary:focus {
 
 /* Better touch targets */
 button,
-.task-btn {
-  min-height: 44px;
-  min-width: 44px;
+.action-btn,
+.payload-tab,
+.copy-btn {
+  min-height: 36px;
+  min-width: 36px;
 }
 
 /* Semantic heading hierarchy */
@@ -85,15 +94,15 @@ h1, h2, h3, h4 {
 /* Ensure sufficient color contrast for backgrounds */
 .priority-high {
   background: var(--card);
-  border-left: 4px solid color-mix(in srgb, var(--ink) 60%, var(--surface));
+  border-left: 3px solid var(--danger);
 }
 .priority-medium {
   background: var(--card);
-  border-left: 4px solid color-mix(in srgb, var(--ink) 40%, var(--surface));
+  border-left: 3px solid var(--warn);
 }
 .priority-low {
   background: var(--card);
-  border-left: 4px solid color-mix(in srgb, var(--ink) 25%, var(--surface));
+  border-left: 3px solid var(--success);
 }
 
 /* Additional accessibility improvements */
@@ -123,24 +132,11 @@ h1, h2, h3, h4 {
   outline-offset: 2px;
 }
 
-/* Improve readability */
-p, div, span {
-  line-height: 1.5;
-}
-
 /* Ensure form elements have proper labels */
 label {
   display: block;
   margin-bottom: 4px;
   font-weight: 500;
-}
-
-/* Better contrast for text elements */
-.muted,
-.muted-small,
-.task-meta {
-  color: var(--slate);
-  opacity: 0.85;
 }
 
 /* Accessible data visualization */
@@ -151,7 +147,7 @@ label {
 
 .bar-fill {
   background: var(--accent);
-  min-width: 2px; /* Ensure visibility even with small values */
+  min-width: 2px;
 }
 
 /* Ensure all interactive elements are keyboard accessible */
@@ -159,6 +155,8 @@ button,
 select,
 textarea,
 summary,
+.payload-tab,
+.copy-btn,
 [tabindex]:not([tabindex="-1"]) {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -174,4 +172,14 @@ summary,
   overflow: visible;
   clip: auto;
   white-space: normal;
+}
+
+/* Ensure missing field indicators are visible */
+.missing-field .field-name {
+  font-weight: 700;
+}
+
+/* Payload tabs keyboard navigation */
+.payload-tab[tabindex="0"] {
+  cursor: pointer;
 }
